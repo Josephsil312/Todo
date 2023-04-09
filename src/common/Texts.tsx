@@ -1,7 +1,7 @@
 import {StyleSheet, Text, View} from 'react-native';
 import React from 'react';
 
-const Textt = (props: {text: string}) => {
+const Texts = (props: {text: string}) => {
   return (
     <View>
       <Text style={styles.list}>{props.text}</Text>
@@ -9,7 +9,7 @@ const Textt = (props: {text: string}) => {
   );
 };
 
-export default Textt;
+export default Texts;
 
 const styles = StyleSheet.create({
   list: {
