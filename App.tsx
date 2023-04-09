@@ -16,19 +16,30 @@ function App(): JSX.Element {
           <Stack.Screen
             name="Home"
             component={HomeScreen}
-            options={{title: 'Home'}}
+            options={{title: 'Home', headerShown: false}}
           />
-          <Stack.Screen name="Tasks" component={Tasks} options={{title: ''}} />
+          <Stack.Screen
+            name="Tasks"
+            component={Tasks}
+            options={{title: '', headerShown: false}}
+          />
           <Stack.Screen
             name="Planned"
             component={Planned}
-            options={{title: ''}}
+            options={{title: '', headerShown: false}}
           />
-          <Stack.Screen name="MyDay" component={MyDay} options={{title: ''}} />
+          <Stack.Screen
+            name="MyDay"
+            component={MyDay}
+            options={{title: '', headerShown: false}}
+          />
           <Stack.Screen
             name="Important"
             component={Important}
-            options={{title: ''}}
+            options={{
+              title: '',
+              headerShown: false,
+            }}
           />
         </Stack.Navigator>
       </View>
