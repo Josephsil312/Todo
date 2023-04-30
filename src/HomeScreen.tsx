@@ -2,12 +2,17 @@ import {StyleSheet, View, Image, TouchableOpacity} from 'react-native';
 import React from 'react';
 import Texts from './common/Texts';
 
-const HomeScreen = ({navigation}) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+interface Navigation {
+  pageName: string;
+  url: string;
+}
+const HomeScreen = ({navigation: Navigation}) => {
   return (
     <View style={styles.ListContainer}>
       <TouchableOpacity
         style={styles.imageTextContainer}
-        onPress={() => navigation.navigate('MyDay')}>
+        onPress={() => Navigation.navigate('MyDay')}>
         <Image
           source={require('../assets/images/sunlight.png')}
           style={styles.image}
@@ -16,7 +21,7 @@ const HomeScreen = ({navigation}) => {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.imageTextContainer}
-        onPress={() => navigation.navigate('Important')}>
+        onPress={() => Navigation.navigate('Important')}>
         <Image
           source={require('../assets/images/important.png')}
           style={styles.image}
@@ -25,7 +30,7 @@ const HomeScreen = ({navigation}) => {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.imageTextContainer}
-        onPress={() => navigation.navigate('Planned')}>
+        onPress={() => Navigation.navigate('Planned')}>
         <Image
           source={require('../assets/images/planning.png')}
           style={styles.image}
@@ -34,7 +39,7 @@ const HomeScreen = ({navigation}) => {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.imageTextContainer}
-        onPress={() => navigation.navigate('Tasks')}>
+        onPress={() => Navigation.navigate('Tasks')}>
         <Image
           source={require('../assets/images/task.png')}
           style={styles.image}
