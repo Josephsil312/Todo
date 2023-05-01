@@ -1,18 +1,59 @@
-import {StyleSheet, Text, View} from 'react-native';
 import React from 'react';
-import GlobalStyle from '../utils/GlobalStyle';
-const Texts = (props: {text: string}) => {
+import {HeadingTextProps} from '../types';
+import {HeadingTextStyle} from '../styled';
+
+export const HeadingText: React.FC<HeadingTextProps> = ({
+  textString,
+  padding,
+  paddingBottom,
+  paddingLeft,
+  paddingRight,
+  paddingTop,
+  margin,
+  marginBottom,
+  marginLeft,
+  marginRight,
+  marginTop,
+  backgroundColor,
+  fontSize,
+  fontFamily,
+  fontWeight,
+  color,
+  numberOfLines,
+  textAlign,
+  lineHeight,
+  fontStyle,
+  top,
+  alignSelf,
+  visible,
+}) => {
   return (
-    <View>
-      <Text style={[GlobalStyle.customFont, styles.list]}>{props.text}</Text>
-    </View>
+    <HeadingTextStyle
+      includeFontPadding={false}
+      textString={textString}
+      paddingBottom={paddingBottom}
+      paddingLeft={paddingLeft}
+      paddingRight={paddingRight}
+      marginTop={marginTop}
+      margin={margin}
+      marginLeft={marginLeft}
+      marginRight={marginRight}
+      paddingTop={paddingTop}
+      marginBottom={marginBottom}
+      padding={padding}
+      backgroundColor={backgroundColor}
+      fontSize={fontSize}
+      fontFamily={fontFamily}
+      fontWeight={fontWeight}
+      color={color}
+      numberOfLines={numberOfLines}
+      textAlign={textAlign}
+      lineHeight={lineHeight}
+      fontStyle={fontStyle}
+      top={top}
+      alignSelf={alignSelf}
+      visible={visible}>
+      {textString}
+    </HeadingTextStyle>
   );
 };
-
-export default Texts;
-
-const styles = StyleSheet.create({
-  list: {
-    fontSize: 25,
-  },
-});

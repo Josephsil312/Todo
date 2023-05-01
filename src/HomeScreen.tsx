@@ -1,6 +1,6 @@
 import {StyleSheet, View, Image, TouchableOpacity} from 'react-native';
+import {HeadingText} from './common/Texts';
 import React from 'react';
-import Texts from './common/Texts';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface Navigation {
@@ -17,7 +17,12 @@ const HomeScreen = ({navigation: Navigation}) => {
           source={require('../assets/images/sunlight.png')}
           style={styles.image}
         />
-        <Texts text={'My Day'} />
+        <HeadingText
+          textString={'My Day'}
+          fontSize={16}
+          fontWeight="500"
+          fontFamily="SuisseIntl"
+        />
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.imageTextContainer}
@@ -26,7 +31,12 @@ const HomeScreen = ({navigation: Navigation}) => {
           source={require('../assets/images/important.png')}
           style={styles.image}
         />
-        <Texts text={'Important'} />
+        <HeadingText
+          textString={'Important'}
+          fontSize={16}
+          fontWeight="500"
+          fontFamily="SuisseIntl"
+        />
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.imageTextContainer}
@@ -35,7 +45,12 @@ const HomeScreen = ({navigation: Navigation}) => {
           source={require('../assets/images/planning.png')}
           style={styles.image}
         />
-        <Texts text={'Planned'} />
+        <HeadingText
+          textString={'Planned'}
+          fontSize={16}
+          fontWeight="500"
+          fontFamily="SuisseIntl"
+        />
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.imageTextContainer}
@@ -44,7 +59,12 @@ const HomeScreen = ({navigation: Navigation}) => {
           source={require('../assets/images/task.png')}
           style={styles.image}
         />
-        <Texts text={'Tasks'} />
+        <HeadingText
+          textString={'Tasks'}
+          fontSize={16}
+          fontWeight="500"
+          fontFamily="SuisseIntl"
+        />
       </TouchableOpacity>
     </View>
   );
