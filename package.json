@@ -14,8 +14,14 @@
     "@react-navigation/native-stack": "6.9.12",
     "react": "18.2.0",
     "react-native": "0.71.4",
+<<<<<<< HEAD
+    "react-native-modal": "13.0.1",
+    "react-native-raw-bottom-sheet": "2.2.0",
+=======
+>>>>>>> 83db0ad9c04f1205188421e9280917758957ff8d
     "react-native-safe-area-context": "4.5.1",
-    "react-native-screens": "3.20.0"
+    "react-native-screens": "3.20.0",
+    "styled-components": "5.3.10"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
@@ -26,6 +32,7 @@
     "@types/jest": "^29.2.1",
     "@types/react": "^18.0.24",
     "@types/react-test-renderer": "^18.0.0",
+    "@types/styled-components": "5.1.26",
     "babel-jest": "^29.2.1",
     "eslint": "^8.19.0",
     "jest": "^29.2.1",

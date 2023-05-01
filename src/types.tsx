@@ -1,0 +1,30 @@
+export interface HeadingTextProps {
+  textString?: string;
+  flexDirection?: string;
+  marginBottom?: number;
+  marginTop?: number;
+  marginLeft?: string | number;
+  marginRight?: number;
+  margin?: number;
+  paddingBottom?: number;
+  paddingTop?: number;
+  paddingLeft?: number;
+  paddingRight?: number;
+  padding?: number;
+  backgroundColor?: string;
+  fontSize?: number;
+  numberOfLines?: number;
+  ellipsizeMode?: string;
+  fontWeight?: string;
+  fontFamily?: string;
+  textAlign?: string;
+  height?: number;
+  color?: string;
+  lineHeight?: string;
+  multiline?: boolean;
+  fontStyle?: string;
+  includeFontPadding?: boolean;
+  top?: number;
+  alignSelf?: string;
+  visible?: boolean;
+}

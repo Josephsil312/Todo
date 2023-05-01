@@ -1,14 +1,8 @@
-import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-  Modal,
-} from 'react-native';
+import {View, Text, Image, TouchableOpacity, StyleSheet} from 'react-native';
 import React, {useState, useRef} from 'react';
 import RBSheet from 'react-native-raw-bottom-sheet';
-
+import {HeadingText} from '../../Texts';
+import Modal from 'react-native-modal';
 const Tasks = ({navigation}) => {
   const [showModal, setShowModal] = useState(false);
   const refRBSheet = useRef<RBSheet>(null);
@@ -17,9 +11,6 @@ const Tasks = ({navigation}) => {
     setShowModal(true);
   };
 
-  const handleModalClose = () => {
-    setShowModal(false);
-  };
   return (
     <View style={styles.taskContainer}>
       <View
@@ -41,34 +32,71 @@ const Tasks = ({navigation}) => {
           />
         </TouchableOpacity>
       </View>
-      <Text style={{color: 'white', fontSize: 30}}>Tasks</Text>
-      <TouchableOpacity onPress={() => refRBSheet?.current?.open()}>
-        <Text>Click</Text>
-      </TouchableOpacity>
+      <HeadingText
+        textString={'Tasks'}
+        fontSize={30}
+        fontWeight="500"
+        fontFamily="SuisseIntl"
+        color="white"
+      />
+      <View
+        style={{justifyContent: 'flex-end', flex: 8, alignItems: 'flex-end'}}>
+        <TouchableOpacity onPress={() => refRBSheet?.current?.open()}>
+          <Text>Click</Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.container}>
         {/* Button to open modal */}
 
         {/* Modal */}
         <Modal
-          visible={showModal}
-          onRequestClose={handleModalClose}
-          transparent>
+          style={{justifyContent: 'flex-start', margin: 0}}
+          isVisible={showModal}
+          animationIn="fadeIn"
+          animationOut="fadeOut"
+          animationOutTiming={500}
+          onBackdropPress={() => setShowModal(false)}>
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
               {/* Content of the modal */}
 
-              <Text style={styles.modalText}>Sort by</Text>
+              <HeadingText
+                textString={'Sort by'}
+                fontSize={16}
+                fontWeight="500"
+                fontFamily="SuisseIntl"
+                marginBottom={10}
+              />
 
-              <Text style={styles.modalText}>Add shortcut to homescreen</Text>
-              <Text style={styles.modalText}>Change theme</Text>
-              <Text style={styles.modalText}>Send a copy</Text>
-              <Text style={styles.modalText}>Duplicate list</Text>
+              <HeadingText
+                textString={'Add shortcut to homescreen'}
+                fontSize={16}
+                fontWeight="500"
+                fontFamily="SuisseIntl"
+                marginBottom={10}
+              />
+              <HeadingText
+                textString={'Change'}
+                fontSize={16}
+                fontWeight="500"
+                fontFamily="SuisseIntl"
+                marginBottom={10}
+              />
+              <HeadingText
+                textString={'Send a copy'}
+                fontSize={16}
+                fontWeight="500"
+                fontFamily="SuisseIntl"
+                marginBottom={10}
+              />
+              <HeadingText
+                textString={'Duplicate list'}
+                fontSize={16}
+                fontWeight="500"
+                fontFamily="SuisseIntl"
+              />
               {/* Button to close modal */}
-              <TouchableOpacity
-                onPress={handleModalClose}
-                style={styles.modalCloseButton}>
-                <Text style={styles.modalCloseButtonText}>Close</Text>
-              </TouchableOpacity>
             </View>
           </View>
         </Modal>
@@ -97,8 +125,8 @@ const styles = StyleSheet.create({
   },
   taskContainer: {
     flex: 1,
-    backgroundColor: '#3555d4',
-    padding: 7,
+    backgroundColor: '#1e6ce3',
+    padding: 10,
   },
   container: {
     flex: 1,
@@ -106,29 +134,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContainer: {
-    flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     padding: 10,
   },
   modalContent: {
     backgroundColor: 'white',
-
     padding: 16,
-    width: '80%', // Set the width of the modal
+    width: '70%', // Set the width of the modal
     maxWidth: 300, // Set the maximum width of the modal
-  },
-  modalText: {
-    fontSize: 16,
-    marginBottom: 16,
-  },
-  modalCloseButton: {
-    alignSelf: 'flex-end',
-  },
-  modalCloseButtonText: {
-    color: 'blue',
-    fontSize: 16,
   },
 });
 export default Tasks;
