@@ -1,11 +1,39 @@
-import {View, Text, Image, TouchableOpacity, StyleSheet} from 'react-native';
+import {
+  View,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+  Keyboard,
+} from 'react-native';
 import React, {useState, useRef} from 'react';
+import type {PropswithChildren} from 'react';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import {HeadingText} from '../../Texts';
 import Modal from 'react-native-modal';
-const Tasks = ({navigation}) => {
+import AddingTasks from './AddingTasks';
+import {RowContainer} from '../../../styled';
+import {SafeAreaView} from 'react-native-safe-area-context';
+// import Icon from 'react-native-vector-icons/FontAwesome';
+import Icon from 'react-native-vector-icons/Feather';
+import {NavigationProp, ParamListBase} from '@react-navigation/native';
+interface Props {
+  navigation: NavigationProp<ParamListBase>;
+}
+
+const Tasks = ({navigation}: Props) => {
   const [showModal, setShowModal] = useState(false);
   const refRBSheet = useRef<RBSheet>(null);
+  const [task, setTask] = useState('');
+  const [tasks, setTasks] = useState(['']);
+
+  const handleAddTask = () => {
+    if (task.trim() !== '') {
+      Keyboard.dismiss();
+      setTasks([...tasks, task]);
+      setTask('');
+    }
+  };
 
   const handleModalOpen = () => {
     setShowModal(true);
@@ -13,36 +41,55 @@ const Tasks = ({navigation}) => {
 
   return (
     <View style={styles.taskContainer}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}>
+      <RowContainer>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Image
-            source={require('./../../../../assets/images/back-arrow.png')}
-            style={styles.image}
-          />
+          <Icon name="chevron-left" size={30} color="white" />
         </TouchableOpacity>
         <TouchableOpacity onPress={handleModalOpen}>
-          <Image
-            source={require('./../../../../assets/images/menu.png')}
-            style={{width: 22, height: 22}}
-          />
+          <Icon name="more-vertical" size={25} color="white" />
         </TouchableOpacity>
-      </View>
+      </RowContainer>
       <HeadingText
         textString={'Tasks'}
-        fontSize={30}
-        fontWeight="500"
+        fontSize={25}
+        fontWeight="700"
         fontFamily="SuisseIntl"
         color="white"
       />
+
+      <SafeAreaView>
+        <FlatList
+          style={{marginTop: 10}}
+          data={tasks.filter(item => item)}
+          keyExtractor={(item, index) => item + index}
+          renderItem={({item}) => (
+            <TouchableOpacity
+              style={{
+                backgroundColor: '#f2f2f2',
+                paddingVertical: 20,
+                paddingHorizontal: 10,
+                borderRadius: 5,
+                marginBottom: 1,
+              }}>
+              <HeadingText
+                textString={item}
+                fontSize={16}
+                fontWeight="600"
+                fontFamily="SuisseIntl"
+              />
+            </TouchableOpacity>
+          )}
+        />
+      </SafeAreaView>
       <View
         style={{justifyContent: 'flex-end', flex: 8, alignItems: 'flex-end'}}>
         <TouchableOpacity onPress={() => refRBSheet?.current?.open()}>
-          <Text>Click</Text>
+          <Icon
+            name="plus-circle"
+            size={40}
+            color="white"
+            // eslint-disable-next-line react-native/no-inline-styles
+          />
         </TouchableOpacity>
       </View>
 
@@ -61,13 +108,19 @@ const Tasks = ({navigation}) => {
             <View style={styles.modalContent}>
               {/* Content of the modal */}
 
-              <HeadingText
-                textString={'Sort by'}
-                fontSize={16}
-                fontWeight="500"
-                fontFamily="SuisseIntl"
-                marginBottom={10}
-              />
+              <TouchableOpacity style={styles.imageTextContainer}>
+                <Icon
+                  name="Sort Ascending"
+                  size={20}
+                  style={{marginRight: 20}}
+                />
+                <HeadingText
+                  textString={'My Day'}
+                  fontSize={16}
+                  fontWeight="500"
+                  fontFamily="SuisseIntl"
+                />
+              </TouchableOpacity>
 
               <HeadingText
                 textString={'Add shortcut to homescreen'}
@@ -101,11 +154,13 @@ const Tasks = ({navigation}) => {
           </View>
         </Modal>
       </View>
+
       <RBSheet
         ref={refRBSheet}
-        closeOnDragDown={true}
+        closeOnDragDown={false}
         closeOnPressMask={true}
         animationType="fade"
+        height={100}
         customStyles={{
           wrapper: {
             backgroundColor: 'transparent',
@@ -113,19 +168,25 @@ const Tasks = ({navigation}) => {
           draggableIcon: {
             backgroundColor: '#000',
           },
-        }}
-      />
+        }}>
+        <AddingTasks
+          handleAddTask={handleAddTask}
+          task={task}
+          // tasks={tasks}
+          setTask={setTask}
+        />
+      </RBSheet>
     </View>
   );
 };
 const styles = StyleSheet.create({
   image: {
-    width: 40,
-    height: 40,
+    width: 30,
+    height: 30,
   },
   taskContainer: {
     flex: 1,
-    backgroundColor: '#1e6ce3',
+    backgroundColor: '#6eb1ff',
     padding: 10,
   },
   container: {
@@ -143,6 +204,13 @@ const styles = StyleSheet.create({
     padding: 16,
     width: '70%', // Set the width of the modal
     maxWidth: 300, // Set the maximum width of the modal
+  },
+  imageTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    height: 75,
+    width: 150,
   },
 });
 export default Tasks;

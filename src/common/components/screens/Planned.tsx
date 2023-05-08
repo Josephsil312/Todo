@@ -1,7 +1,10 @@
 import {StyleSheet, Text, View, Image, TouchableOpacity} from 'react-native';
 import React from 'react';
-
-const Planned = ({navigation}) => {
+import {NavigationProp, ParamListBase} from '@react-navigation/native';
+interface Props {
+  navigation: NavigationProp<ParamListBase>;
+}
+const Planned = ({navigation}: Props) => {
   return (
     <View>
       <TouchableOpacity onPress={() => navigation.goBack()}>

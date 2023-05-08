@@ -1,22 +1,19 @@
-import {StyleSheet, View, Image, TouchableOpacity} from 'react-native';
+import {StyleSheet, View, TouchableOpacity} from 'react-native';
 import {HeadingText} from './common/Texts';
 import React from 'react';
-
+import Icon from 'react-native-vector-icons/Feather';
+import {NavigationProp, ParamListBase} from '@react-navigation/native';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface Navigation {
-  pageName: string;
-  url: string;
+interface Props {
+  navigation: NavigationProp<ParamListBase>;
 }
-const HomeScreen = ({navigation: Navigation}) => {
+const HomeScreen = ({navigation}: Props) => {
   return (
     <View style={styles.ListContainer}>
       <TouchableOpacity
         style={styles.imageTextContainer}
-        onPress={() => Navigation.navigate('MyDay')}>
-        <Image
-          source={require('../assets/images/sunlight.png')}
-          style={styles.image}
-        />
+        onPress={() => navigation.navigate('MyDay')}>
+        <Icon name="sun" size={25} style={{marginRight: 20}} />
         <HeadingText
           textString={'My Day'}
           fontSize={16}
@@ -26,11 +23,8 @@ const HomeScreen = ({navigation: Navigation}) => {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.imageTextContainer}
-        onPress={() => Navigation.navigate('Important')}>
-        <Image
-          source={require('../assets/images/important.png')}
-          style={styles.image}
-        />
+        onPress={() => navigation.navigate('Important')}>
+        <Icon name="star" size={25} style={{marginRight: 20}} color="red" />
         <HeadingText
           textString={'Important'}
           fontSize={16}
@@ -40,10 +34,12 @@ const HomeScreen = ({navigation: Navigation}) => {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.imageTextContainer}
-        onPress={() => Navigation.navigate('Planned')}>
-        <Image
-          source={require('../assets/images/planning.png')}
-          style={styles.image}
+        onPress={() => navigation.navigate('Planned')}>
+        <Icon
+          name="file-text"
+          size={25}
+          style={{marginRight: 20}}
+          color="green"
         />
         <HeadingText
           textString={'Planned'}
@@ -54,10 +50,12 @@ const HomeScreen = ({navigation: Navigation}) => {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.imageTextContainer}
-        onPress={() => Navigation.navigate('Tasks')}>
-        <Image
-          source={require('../assets/images/task.png')}
-          style={styles.image}
+        onPress={() => navigation.navigate('Tasks')}>
+        <Icon
+          name="check-square"
+          size={25}
+          style={{marginRight: 20}}
+          color="grey"
         />
         <HeadingText
           textString={'Tasks'}
@@ -85,8 +83,8 @@ const styles = StyleSheet.create({
     width: 150,
   },
   image: {
-    width: 30,
-    height: 30,
+    width: 20,
+    height: 20,
     marginRight: 20,
   },
 });
