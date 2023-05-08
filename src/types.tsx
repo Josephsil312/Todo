@@ -27,4 +27,43 @@ export interface HeadingTextProps {
   top?: number;
   alignSelf?: string;
   visible?: boolean;
+  key?: number;
+  width?: number | string;
+  borderRadius?: number;
+  marginVertical?: number;
 }
+
+export interface TextInputProps {
+  height?: number;
+  width?: number | string;
+  borderRadius?: number;
+  borderColor?: string;
+  paddingVertical?: number;
+  paddingHorizontal?: number;
+  backgroundColor?: string;
+  fontSize?: number;
+  color: string;
+  fontFamily?: string;
+  placeholder?: string;
+  placeholderTextColor?: string;
+  value?: string;
+  onChangeText?: (val: string) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  flex?: number;
+  marginRight?: number;
+  borderWidth?: string;
+  paddingTop?: number;
+  paddingBottom?: number;
+  marginLeft?: string;
+  onSubmitEditing?: () => void;
+  marginTop?: number;
+  marginBottom?: number;
+}
+
+export type GroupStepProps = {
+  borderColor?: string;
+  backgroundColor?: string;
+  marginLeft?: string;
+  marginRight?: string;
+};
