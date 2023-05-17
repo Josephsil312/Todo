@@ -1,13 +1,5 @@
-import {
-  View,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-  FlatList,
-  Keyboard,
-} from 'react-native';
+import {View, TouchableOpacity, StyleSheet, FlatList} from 'react-native';
 import React, {useState, useRef} from 'react';
-import type {PropswithChildren} from 'react';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import {HeadingText} from '../../Texts';
 import Modal from 'react-native-modal';
@@ -17,6 +9,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 // import Icon from 'react-native-vector-icons/FontAwesome';
 import Icon from 'react-native-vector-icons/Feather';
 import {NavigationProp, ParamListBase} from '@react-navigation/native';
+
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
@@ -24,12 +17,11 @@ interface Props {
 const Tasks = ({navigation}: Props) => {
   const [showModal, setShowModal] = useState(false);
   const refRBSheet = useRef<RBSheet>(null);
+  const [tasks, setTasks] = useState<string[]>([]);
   const [task, setTask] = useState('');
-  const [tasks, setTasks] = useState(['']);
 
   const handleAddTask = () => {
     if (task.trim() !== '') {
-      Keyboard.dismiss();
       setTasks([...tasks, task]);
       setTask('');
     }
@@ -60,8 +52,8 @@ const Tasks = ({navigation}: Props) => {
       <SafeAreaView>
         <FlatList
           style={{marginTop: 10}}
-          data={tasks.filter(item => item)}
-          keyExtractor={(item, index) => item + index}
+          data={tasks}
+          keyExtractor={item => item}
           renderItem={({item}) => (
             <TouchableOpacity
               style={{
@@ -102,7 +94,8 @@ const Tasks = ({navigation}: Props) => {
           isVisible={showModal}
           animationIn="fadeIn"
           animationOut="fadeOut"
-          animationOutTiming={500}
+          animationOutTiming={1000}
+          animationInTiming={400}
           onBackdropPress={() => setShowModal(false)}>
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
