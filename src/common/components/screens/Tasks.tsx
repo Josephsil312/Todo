@@ -8,9 +8,7 @@ import {RowContainer} from '../../../styled';
 import {SafeAreaView} from 'react-native-safe-area-context';
 // import Icon from 'react-native-vector-icons/FontAwesome';
 import Icon from 'react-native-vector-icons/Feather';
-import {useDispatch, useSelector} from 'react-redux';
 import {NavigationProp, ParamListBase} from '@react-navigation/native';
-import {addTask, deleteTask, completeTask} from '../../../../src/tasksSlice';
 
 interface Props {
   navigation: NavigationProp<ParamListBase>;
@@ -19,26 +17,16 @@ interface Props {
 const Tasks = ({navigation}: Props) => {
   const [showModal, setShowModal] = useState(false);
   const refRBSheet = useRef<RBSheet>(null);
+  const [tasks, setTasks] = useState<string[]>([]);
   const [task, setTask] = useState('');
-  const tasks = useSelector(
-    (state: {tasks: {tasks: any}}) => state.tasks.tasks,
-  );
-
-  const dispatch = useDispatch();
 
   const handleAddTask = () => {
     if (task.trim() !== '') {
-      dispatch(addTask(task));
+      setTasks([...tasks, task]);
       setTask('');
     }
   };
-  const handleDeleteTask = (taskId: any) => {
-    dispatch(deleteTask(taskId));
-  };
 
-  const handleCompleteTask = (taskId: any) => {
-    dispatch(completeTask(taskId));
-  };
   const handleModalOpen = () => {
     setShowModal(true);
   };
@@ -65,7 +53,7 @@ const Tasks = ({navigation}: Props) => {
         <FlatList
           style={{marginTop: 10}}
           data={tasks}
-          keyExtractor={item => item.id}
+          keyExtractor={item => item}
           renderItem={({item}) => (
             <TouchableOpacity
               style={{
@@ -74,9 +62,7 @@ const Tasks = ({navigation}: Props) => {
                 paddingHorizontal: 10,
                 borderRadius: 5,
                 marginBottom: 1,
-              }}
-              onPress={() => handleCompleteTask(item.id)}
-              onLongPress={() => handleDeleteTask(item.id)}>
+              }}>
               <HeadingText
                 textString={item}
                 fontSize={16}
@@ -108,7 +94,8 @@ const Tasks = ({navigation}: Props) => {
           isVisible={showModal}
           animationIn="fadeIn"
           animationOut="fadeOut"
-          animationOutTiming={500}
+          animationOutTiming={1000}
+          animationInTiming={400}
           onBackdropPress={() => setShowModal(false)}>
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
