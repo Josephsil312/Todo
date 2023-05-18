@@ -25,13 +25,13 @@
       "filters": [
         {
           "filterType": "ABI",
-          "value": "armeabi-v7a"
+          "value": "arm64-v8a"
         }
       ],
       "attributes": [],
-      "versionCode": 1001,
+      "versionCode": 1003,
       "versionName": "1.0",
-      "outputFile": "app-armeabi-v7a-release.apk"
+      "outputFile": "app-arm64-v8a-release.apk"
     },
     {
       "type": "ONE_OF_MANY",
