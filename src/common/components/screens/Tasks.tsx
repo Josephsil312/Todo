@@ -313,6 +313,7 @@ const Tasks = ({navigation}: Props) => {
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   image: {
     width: 30,
