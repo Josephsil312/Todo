@@ -31,6 +31,7 @@ export const HeadingText: React.FC<HeadingTextProps> = ({
   width,
   borderRadius,
   marginVertical,
+  textDecorationLine,
 }) => {
   return (
     <HeadingTextStyle
@@ -61,6 +62,7 @@ export const HeadingText: React.FC<HeadingTextProps> = ({
       alignSelf={alignSelf}
       width={width}
       borderRadius={borderRadius}
+      textDecorationLine={textDecorationLine}
       marginVertical={marginVertical}
       visible={visible}>
       {textString}

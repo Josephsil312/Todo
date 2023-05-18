@@ -1,13 +1,14 @@
 import {
   View,
-  Image,
   TouchableOpacity,
   StyleSheet,
   FlatList,
   Keyboard,
+  Text,
 } from 'react-native';
-import React, {useState, useRef} from 'react';
-import type {PropswithChildren} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import RBSheet from 'react-native-raw-bottom-sheet';
 import {HeadingText} from '../../Texts';
 import Modal from 'react-native-modal';
@@ -25,18 +26,74 @@ const Tasks = ({navigation}: Props) => {
   const [showModal, setShowModal] = useState(false);
   const refRBSheet = useRef<RBSheet>(null);
   const [task, setTask] = useState('');
-  const [tasks, setTasks] = useState(['']);
-
-  const handleAddTask = () => {
+  const [tasks, setTasks] = useState<
+    {
+      completed: any;
+      id: string;
+      name: string;
+    }[]
+  >([]);
+  const [showCompleted, setShowCompleted] = useState(false);
+  const handleAddTask = async () => {
     if (task.trim() !== '') {
       Keyboard.dismiss();
-      setTasks([...tasks, task]);
+      const taskId = Date.now().toString();
+      const newTask = {id: taskId, name: task};
+      const updatedTasks = [...tasks, newTask];
+      setTasks(updatedTasks);
       setTask('');
+      try {
+        await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
+      } catch (error) {
+        console.log('Error saving tasks to AsyncStorage:', error);
+      }
     }
   };
 
   const handleModalOpen = () => {
     setShowModal(true);
+  };
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        const savedTasks = await AsyncStorage.getItem('tasks');
+        if (savedTasks) {
+          setTasks(JSON.parse(savedTasks));
+        }
+      } catch (error) {
+        console.log('Error loading tasks from AsyncStorage:', error);
+      }
+    };
+
+    loadTasks();
+  }, []);
+
+  const handleDeleteTask = async (item: string) => {
+    // Retrieve the current tasks from AsyncStorage
+    const storedTasks = await AsyncStorage.getItem('tasks');
+    let tasks: {id: string; name: string; completed: boolean}[] = [];
+
+    if (storedTasks) {
+      // Parse the stored tasks from JSON to an array
+      tasks = JSON.parse(storedTasks);
+
+      // Find the index of the task to be deleted
+      const taskIndex = tasks.findIndex((task: string) => task.id === item);
+
+      if (taskIndex !== -1) {
+        // Remove the task from the tasks array
+        // tasks.splice(taskIndex, 1);
+        tasks[taskIndex].completed = true;
+        // Update the tasks in AsyncStorage
+        await AsyncStorage.setItem('tasks', JSON.stringify(tasks));
+
+        // Update the state to re-render the component
+        setTasks([...tasks]);
+      }
+    }
+  };
+  const toggleCompletedVisibility = () => {
+    setShowCompleted(!showCompleted);
   };
 
   return (
@@ -60,36 +117,75 @@ const Tasks = ({navigation}: Props) => {
       <SafeAreaView>
         <FlatList
           style={{marginTop: 10}}
-          data={tasks.filter(item => item)}
-          keyExtractor={(item, index) => item + index}
-          renderItem={({item}) => (
-            <TouchableOpacity
-              style={{
-                backgroundColor: '#f2f2f2',
-                paddingVertical: 20,
-                paddingHorizontal: 10,
-                borderRadius: 5,
-                marginBottom: 1,
-              }}>
-              <HeadingText
-                textString={item}
-                fontSize={16}
-                fontWeight="600"
-                fontFamily="SuisseIntl"
-              />
-            </TouchableOpacity>
-          )}
+          data={tasks}
+          keyExtractor={item => item.id}
+          renderItem={({item}) => {
+            if (!showCompleted && item.completed) {
+              // If showCompleted is false and the task is completed, render nothing
+              return null;
+            }
+            return (
+              <TouchableOpacity
+                style={{
+                  backgroundColor: '#f2f2f2',
+                  paddingVertical: 20,
+                  paddingHorizontal: 10,
+                  borderRadius: 5,
+                  marginBottom: 1,
+                }}>
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <Icon
+                    name="circle"
+                    size={20}
+                    color="grey"
+                    onPress={() => {
+                      handleDeleteTask(item.id);
+                    }}
+                  />
+                  <Text
+                    style={{
+                      fontWeight: item.completed ? 'normal' : '700',
+                      fontFamily: 'SuisseIntl',
+                      marginLeft: 20,
+                      fontSize: 26,
+                      textDecorationLine: item.completed
+                        ? 'line-through'
+                        : 'none',
+                    }}>
+                    {item.name}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          }}
         />
+        {showCompleted && (
+          <View style={{backgroundColor: '#f2f2f2', padding: 10}}>
+            {tasks
+              .filter(task => task.completed)
+              .map(task => (
+                <Text
+                  key={task.id}
+                  style={{
+                    fontWeight: 'normal',
+                    fontFamily: 'SuisseIntl',
+                    marginLeft: 20,
+                    fontSize: 26,
+                    textDecorationLine: 'line-through',
+                  }}>
+                  {task.name}
+                </Text>
+              ))}
+          </View>
+        )}
       </SafeAreaView>
+      <TouchableOpacity onPress={toggleCompletedVisibility}>
+        <Text>Show Completed</Text>
+      </TouchableOpacity>
       <View
         style={{justifyContent: 'flex-end', flex: 8, alignItems: 'flex-end'}}>
         <TouchableOpacity onPress={() => refRBSheet?.current?.open()}>
-          <Icon
-            name="plus-circle"
-            size={40}
-            color="white"
-            // eslint-disable-next-line react-native/no-inline-styles
-          />
+          <Icon name="plus-circle" size={40} color="white" />
         </TouchableOpacity>
       </View>
 
@@ -160,7 +256,7 @@ const Tasks = ({navigation}: Props) => {
         closeOnDragDown={false}
         closeOnPressMask={true}
         animationType="fade"
-        height={100}
+        height={70}
         customStyles={{
           wrapper: {
             backgroundColor: 'transparent',
@@ -190,7 +286,6 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   container: {
-    flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
   },
