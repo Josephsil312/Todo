@@ -33,7 +33,15 @@ const Tasks = ({navigation}: Props) => {
       name: string;
     }[]
   >([]);
-  const [showCompleted, setShowCompleted] = useState(false);
+  const [completedTasks, setCompletedTasks] = useState<
+    {
+      id: string;
+      name: string;
+    }[]
+  >([]);
+
+  const [showCompletedDropdown, setShowCompletedDropdown] = useState(false);
+
   const handleAddTask = async () => {
     if (task.trim() !== '') {
       Keyboard.dismiss();
@@ -68,32 +76,60 @@ const Tasks = ({navigation}: Props) => {
     loadTasks();
   }, []);
 
-  const handleDeleteTask = async (item: string) => {
-    // Retrieve the current tasks from AsyncStorage
-    const storedTasks = await AsyncStorage.getItem('tasks');
-    let tasks: {id: string; name: string; completed: boolean}[] = [];
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      const completedTask = tasks.find(task => task.id === taskId);
 
-    if (storedTasks) {
-      // Parse the stored tasks from JSON to an array
-      tasks = JSON.parse(storedTasks);
+      if (completedTask) {
+        const updatedTasks = tasks.filter(task => task.id !== taskId);
+        const updatedCompletedTasks = [...completedTasks, completedTask];
 
-      // Find the index of the task to be deleted
-      const taskIndex = tasks.findIndex((task: string) => task.id === item);
+        setTasks(updatedTasks);
+        setCompletedTasks(updatedCompletedTasks);
 
-      if (taskIndex !== -1) {
-        // Remove the task from the tasks array
-        // tasks.splice(taskIndex, 1);
-        tasks[taskIndex].completed = true;
-        // Update the tasks in AsyncStorage
-        await AsyncStorage.setItem('tasks', JSON.stringify(tasks));
-
-        // Update the state to re-render the component
-        setTasks([...tasks]);
+        await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
+        await AsyncStorage.setItem(
+          'completedTasks',
+          JSON.stringify(updatedCompletedTasks),
+        );
       }
+    } catch (error) {
+      console.log('Error updating task:', error);
     }
   };
-  const toggleCompletedVisibility = () => {
-    setShowCompleted(!showCompleted);
+  useEffect(() => {
+    const loadCompletedTasks = async () => {
+      try {
+        const savedCompletedTasks = await AsyncStorage.getItem(
+          'completedTasks',
+        );
+        if (savedCompletedTasks) {
+          setCompletedTasks(JSON.parse(savedCompletedTasks));
+        }
+      } catch (error) {
+        console.log('Error loading completed tasks from AsyncStorage:', error);
+      }
+    };
+
+    loadCompletedTasks();
+  }, []);
+  useEffect(() => {
+    const saveCompletedTasks = async () => {
+      try {
+        await AsyncStorage.setItem(
+          'completedTasks',
+          JSON.stringify(completedTasks),
+        );
+      } catch (error) {
+        console.log('Error saving completed tasks to AsyncStorage:', error);
+      }
+    };
+
+    saveCompletedTasks();
+  }, [completedTasks]);
+
+  const toggleCompletedDropdown = () => {
+    setShowCompletedDropdown(!showCompletedDropdown);
   };
 
   return (
@@ -117,71 +153,73 @@ const Tasks = ({navigation}: Props) => {
       <SafeAreaView>
         <FlatList
           style={{marginTop: 10}}
-          data={tasks}
+          data={tasks.filter(
+            task => !completedTasks.some(c => c.id === task.id),
+          )}
           keyExtractor={item => item.id}
-          renderItem={({item}) => {
-            if (!showCompleted && item.completed) {
-              // If showCompleted is false and the task is completed, render nothing
-              return null;
-            }
-            return (
-              <TouchableOpacity
+          renderItem={({item}) => (
+            <TouchableOpacity
+              style={{
+                backgroundColor: '#f2f2f2',
+                paddingVertical: 20,
+                paddingHorizontal: 10,
+                borderRadius: 5,
+                marginBottom: 1,
+                flexDirection: 'row',
+                alignItems: 'center',
+              }}
+              onPress={() => handleDeleteTask(item.id)}>
+              <Icon
+                name="circle"
+                size={20}
+                color="grey"
+                style={{marginRight: 10}}
+              />
+              <Text
                 style={{
-                  backgroundColor: '#f2f2f2',
-                  paddingVertical: 20,
-                  paddingHorizontal: 10,
-                  borderRadius: 5,
-                  marginBottom: 1,
+                  fontWeight: '700',
+                  fontFamily: 'SuisseIntl',
+                  fontSize: 16,
                 }}>
-                <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                  <Icon
-                    name="circle"
-                    size={20}
-                    color="grey"
-                    onPress={() => {
-                      handleDeleteTask(item.id);
-                    }}
-                  />
-                  <Text
-                    style={{
-                      fontWeight: item.completed ? 'normal' : '700',
-                      fontFamily: 'SuisseIntl',
-                      marginLeft: 20,
-                      fontSize: 26,
-                      textDecorationLine: item.completed
-                        ? 'line-through'
-                        : 'none',
-                    }}>
-                    {item.name}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            );
-          }}
+                {item.name}
+              </Text>
+            </TouchableOpacity>
+          )}
         />
-        {showCompleted && (
+
+        {showCompletedDropdown && (
           <View style={{backgroundColor: '#f2f2f2', padding: 10}}>
-            {tasks
-              .filter(task => task.completed)
-              .map(task => (
+            {completedTasks.map(task => (
+              <TouchableOpacity
+                key={task.id}
+                style={{flexDirection: 'row', alignItems: 'center'}}
+                onPress={() => handleDeleteTask(task.id)}>
+                <Icon
+                  name="check-circle"
+                  size={20}
+                  color="green"
+                  style={{marginRight: 10}}
+                />
                 <Text
-                  key={task.id}
                   style={{
                     fontWeight: 'normal',
                     fontFamily: 'SuisseIntl',
-                    marginLeft: 20,
-                    fontSize: 26,
+                    fontSize: 16,
                     textDecorationLine: 'line-through',
                   }}>
                   {task.name}
                 </Text>
-              ))}
+              </TouchableOpacity>
+            ))}
           </View>
         )}
       </SafeAreaView>
-      <TouchableOpacity onPress={toggleCompletedVisibility}>
-        <Text>Show Completed</Text>
+      <TouchableOpacity onPress={toggleCompletedDropdown}>
+        <Text style={{marginVertical: 10}}>
+          {showCompletedDropdown ? 'Hide Completed' : 'Show Completed'}
+        </Text>
       </TouchableOpacity>
+
       <View
         style={{justifyContent: 'flex-end', flex: 8, alignItems: 'flex-end'}}>
         <TouchableOpacity onPress={() => refRBSheet?.current?.open()}>
