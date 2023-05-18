@@ -1,13 +1,14 @@
 import {
   View,
-  Image,
   TouchableOpacity,
   StyleSheet,
   FlatList,
   Keyboard,
+  Text,
 } from 'react-native';
-import React, {useState, useRef} from 'react';
-import type {PropswithChildren} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import RBSheet from 'react-native-raw-bottom-sheet';
 import {HeadingText} from '../../Texts';
 import Modal from 'react-native-modal';
@@ -25,18 +26,110 @@ const Tasks = ({navigation}: Props) => {
   const [showModal, setShowModal] = useState(false);
   const refRBSheet = useRef<RBSheet>(null);
   const [task, setTask] = useState('');
-  const [tasks, setTasks] = useState(['']);
+  const [tasks, setTasks] = useState<
+    {
+      completed: any;
+      id: string;
+      name: string;
+    }[]
+  >([]);
+  const [completedTasks, setCompletedTasks] = useState<
+    {
+      id: string;
+      name: string;
+    }[]
+  >([]);
 
-  const handleAddTask = () => {
+  const [showCompletedDropdown, setShowCompletedDropdown] = useState(false);
+
+  const handleAddTask = async () => {
     if (task.trim() !== '') {
       Keyboard.dismiss();
-      setTasks([...tasks, task]);
+      const taskId = Date.now().toString();
+      const newTask = {id: taskId, name: task};
+      const updatedTasks = [...tasks, newTask];
+      setTasks(updatedTasks);
       setTask('');
+      try {
+        await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
+      } catch (error) {
+        console.log('Error saving tasks to AsyncStorage:', error);
+      }
     }
   };
 
   const handleModalOpen = () => {
     setShowModal(true);
+  };
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        const savedTasks = await AsyncStorage.getItem('tasks');
+        if (savedTasks) {
+          setTasks(JSON.parse(savedTasks));
+        }
+      } catch (error) {
+        console.log('Error loading tasks from AsyncStorage:', error);
+      }
+    };
+
+    loadTasks();
+  }, []);
+
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      const completedTask = tasks.find(task => task.id === taskId);
+
+      if (completedTask) {
+        const updatedTasks = tasks.filter(task => task.id !== taskId);
+        const updatedCompletedTasks = [...completedTasks, completedTask];
+
+        setTasks(updatedTasks);
+        setCompletedTasks(updatedCompletedTasks);
+
+        await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
+        await AsyncStorage.setItem(
+          'completedTasks',
+          JSON.stringify(updatedCompletedTasks),
+        );
+      }
+    } catch (error) {
+      console.log('Error updating task:', error);
+    }
+  };
+  useEffect(() => {
+    const loadCompletedTasks = async () => {
+      try {
+        const savedCompletedTasks = await AsyncStorage.getItem(
+          'completedTasks',
+        );
+        if (savedCompletedTasks) {
+          setCompletedTasks(JSON.parse(savedCompletedTasks));
+        }
+      } catch (error) {
+        console.log('Error loading completed tasks from AsyncStorage:', error);
+      }
+    };
+
+    loadCompletedTasks();
+  }, []);
+  useEffect(() => {
+    const saveCompletedTasks = async () => {
+      try {
+        await AsyncStorage.setItem(
+          'completedTasks',
+          JSON.stringify(completedTasks),
+        );
+      } catch (error) {
+        console.log('Error saving completed tasks to AsyncStorage:', error);
+      }
+    };
+
+    saveCompletedTasks();
+  }, [completedTasks]);
+
+  const toggleCompletedDropdown = () => {
+    setShowCompletedDropdown(!showCompletedDropdown);
   };
 
   return (
@@ -60,8 +153,10 @@ const Tasks = ({navigation}: Props) => {
       <SafeAreaView>
         <FlatList
           style={{marginTop: 10}}
-          data={tasks.filter(item => item)}
-          keyExtractor={(item, index) => item + index}
+          data={tasks.filter(
+            task => !completedTasks.some(c => c.id === task.id),
+          )}
+          keyExtractor={item => item.id}
           renderItem={({item}) => (
             <TouchableOpacity
               style={{
@@ -70,26 +165,65 @@ const Tasks = ({navigation}: Props) => {
                 paddingHorizontal: 10,
                 borderRadius: 5,
                 marginBottom: 1,
-              }}>
-              <HeadingText
-                textString={item}
-                fontSize={16}
-                fontWeight="600"
-                fontFamily="SuisseIntl"
+                flexDirection: 'row',
+                alignItems: 'center',
+              }}
+              onPress={() => handleDeleteTask(item.id)}>
+              <Icon
+                name="circle"
+                size={20}
+                color="grey"
+                style={{marginRight: 10}}
               />
+              <Text
+                style={{
+                  fontWeight: '700',
+                  fontFamily: 'SuisseIntl',
+                  fontSize: 16,
+                }}>
+                {item.name}
+              </Text>
             </TouchableOpacity>
           )}
         />
+
+        {showCompletedDropdown && (
+          <View style={{backgroundColor: '#f2f2f2', padding: 10}}>
+            {completedTasks.map(task => (
+              <TouchableOpacity
+                key={task.id}
+                style={{flexDirection: 'row', alignItems: 'center'}}
+                onPress={() => handleDeleteTask(task.id)}>
+                <Icon
+                  name="check-circle"
+                  size={20}
+                  color="green"
+                  style={{marginRight: 10}}
+                />
+                <Text
+                  style={{
+                    fontWeight: 'normal',
+                    fontFamily: 'SuisseIntl',
+                    fontSize: 16,
+                    textDecorationLine: 'line-through',
+                  }}>
+                  {task.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </SafeAreaView>
+      <TouchableOpacity onPress={toggleCompletedDropdown}>
+        <Text style={{marginVertical: 10}}>
+          {showCompletedDropdown ? 'Hide Completed' : 'Show Completed'}
+        </Text>
+      </TouchableOpacity>
+
       <View
         style={{justifyContent: 'flex-end', flex: 8, alignItems: 'flex-end'}}>
         <TouchableOpacity onPress={() => refRBSheet?.current?.open()}>
-          <Icon
-            name="plus-circle"
-            size={40}
-            color="white"
-            // eslint-disable-next-line react-native/no-inline-styles
-          />
+          <Icon name="plus-circle" size={40} color="white" />
         </TouchableOpacity>
       </View>
 
@@ -160,7 +294,7 @@ const Tasks = ({navigation}: Props) => {
         closeOnDragDown={false}
         closeOnPressMask={true}
         animationType="fade"
-        height={100}
+        height={70}
         customStyles={{
           wrapper: {
             backgroundColor: 'transparent',
@@ -190,7 +324,6 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   container: {
-    flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
   },
