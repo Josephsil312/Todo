@@ -46,6 +46,8 @@ const Tasks = ({navigation}: Props) => {
     if (task.trim() !== '') {
       Keyboard.dismiss();
       const taskId = Date.now().toString();
+
+      
       const newTask = {id: taskId, name: task};
       const updatedTasks = [...tasks, newTask];
       setTasks(updatedTasks);
