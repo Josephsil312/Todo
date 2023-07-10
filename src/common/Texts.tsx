@@ -64,6 +64,7 @@ export const HeadingText: React.FC<HeadingTextProps> = ({
       borderRadius={borderRadius}
       textDecorationLine={textDecorationLine}
       marginVertical={marginVertical}
+      textDecorationLine={textDecorationLine}
       visible={visible}>
       {textString}
     </HeadingTextStyle>

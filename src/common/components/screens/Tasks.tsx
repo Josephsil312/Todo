@@ -18,6 +18,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 // import Icon from 'react-native-vector-icons/FontAwesome';
 import Icon from 'react-native-vector-icons/Feather';
 import {NavigationProp, ParamListBase} from '@react-navigation/native';
+
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
@@ -241,7 +242,8 @@ const Tasks = ({navigation}: Props) => {
           isVisible={showModal}
           animationIn="fadeIn"
           animationOut="fadeOut"
-          animationOutTiming={500}
+          animationOutTiming={1000}
+          animationInTiming={400}
           onBackdropPress={() => setShowModal(false)}>
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
