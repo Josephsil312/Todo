@@ -47,6 +47,7 @@ const Tasks = ({navigation}: Props) => {
     if (task.trim() !== '') {
       Keyboard.dismiss();
       const taskId = Date.now().toString();
+
       const newTask = {id: taskId, name: task};
       const updatedTasks = [...tasks, newTask];
       setTasks(updatedTasks);
@@ -176,14 +177,20 @@ const Tasks = ({navigation}: Props) => {
                 color="grey"
                 style={{marginRight: 10}}
               />
-              <Text
+              <HeadingText
+                textString={item.name}
+                fontSize={16}
+                fontWeight="500"
+                fontFamily="SuisseIntl"
+              />
+              {/* <Text
                 style={{
                   fontWeight: '700',
                   fontFamily: 'SuisseIntl',
                   fontSize: 16,
                 }}>
                 {item.name}
-              </Text>
+              </Text> */}
             </TouchableOpacity>
           )}
         />
@@ -201,15 +208,13 @@ const Tasks = ({navigation}: Props) => {
                   color="green"
                   style={{marginRight: 10}}
                 />
-                <Text
-                  style={{
-                    fontWeight: 'normal',
-                    fontFamily: 'SuisseIntl',
-                    fontSize: 16,
-                    textDecorationLine: 'line-through',
-                  }}>
-                  {task.name}
-                </Text>
+                <HeadingText
+                  textString={task.name}
+                  fontSize={16}
+                  fontWeight="500"
+                  fontFamily="SuisseIntl"
+                  textDecorationLine="line-through"
+                />
               </TouchableOpacity>
             ))}
           </View>
@@ -315,6 +320,7 @@ const Tasks = ({navigation}: Props) => {
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   image: {
     width: 30,
