@@ -5,6 +5,7 @@ const AddingTasks = (props: {
   setTask: (arg0: any) => any;
   task: any;
   handleAddTask: (() => void) | undefined;
+  handlePlusIconClick: (() => void) | undefined;
 }) => {
   return (
     <>
