@@ -4,6 +4,7 @@ import {RowContainer, TextInputSingleLine} from '../../../styled';
 const AddingTasks = (props: {
   setTask: (arg0: any) => any;
   task: any;
+  inputRef: any;
   handleAddTask: (() => void) | undefined;
   handlePlusIconClick: (() => void) | undefined;
 }) => {
@@ -17,6 +18,7 @@ const AddingTasks = (props: {
             placeholder={'Add task'}
             maxLength={256}
             color={'grey'}
+            ref={props.inputRef}
           />
 
           <TouchableOpacity onPress={props.handleAddTask}>
