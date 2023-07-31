@@ -5,19 +5,21 @@ import {
   FlatList,
   Keyboard,
   Text,
-  ScrollView,
+  Animated,
   Image,
   ImageBackground,
+  LayoutAnimation,
+  Platform,
+  UIManager,
+  PanResponder,
 } from 'react-native';
 import React, {useState, useRef, useEffect} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import RBSheet from 'react-native-raw-bottom-sheet';
 import {HeadingText} from '../../Texts';
 import Modal from 'react-native-modal';
 import AddingTasks from './AddingTasks';
 import {RowContainer} from '../../../styled';
-import {SafeAreaView} from 'react-native-safe-area-context';
 // import Icon from 'react-native-vector-icons/FontAwesome';
 import Icon from 'react-native-vector-icons/Feather';
 import {NavigationProp, ParamListBase} from '@react-navigation/native';
@@ -31,6 +33,8 @@ const Tasks = ({navigation}: Props) => {
   const refRBSheet = useRef<RBSheet>(null);
   const [task, setTask] = useState('');
   const [count, setCount] = useState(0);
+  const fadeInAnimation = useRef(new Animated.Value(0)).current;
+  const slideInAnimation = useRef(new Animated.Value(100)).current;
   const [tasks, setTasks] = useState<
     {
       id: string;
@@ -47,9 +51,38 @@ const Tasks = ({navigation}: Props) => {
       key: string;
     }[]
   >([]);
-
+  const fadeInStyle = {
+    opacity: fadeInAnimation,
+  };
+  const slideInStyle = {
+    transform: [
+      {
+        translateY: slideInAnimation,
+      },
+    ],
+  };
   const [showCompletedDropdown, setShowCompletedDropdown] = useState(false);
 
+  // const handleAddTask = async () => {
+  //   if (task.trim() !== '') {
+  //     Keyboard.dismiss();
+  //     const taskId = Date.now().toString();
+  //     const newTask = {id: taskId, name: task, position: count};
+  //     const updatedTasks = [...tasks, newTask];
+  //     setTasks(updatedTasks);
+  //     setTask('');
+  //     setCount(prev => prev + 1);
+  //     try {
+  //       await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
+  //     } catch (error) {
+  //       console.log('Error saving tasks to AsyncStorage:', error);
+  //     }
+  //   }
+  // };
+  if (Platform.OS === 'android') {
+    UIManager.setLayoutAnimationEnabledExperimental &&
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
   const handleAddTask = async () => {
     if (task.trim() !== '') {
       Keyboard.dismiss();
@@ -59,6 +92,7 @@ const Tasks = ({navigation}: Props) => {
       setTasks(updatedTasks);
       setTask('');
       setCount(prev => prev + 1);
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       try {
         await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
       } catch (error) {
@@ -97,7 +131,7 @@ const Tasks = ({navigation}: Props) => {
       if (completedTask) {
         const updatedTasks = tasks.filter(task => task.id !== taskId);
         const updatedCompletedTasks = [...completedTasks, completedTask];
-
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setTasks(updatedTasks);
         setCompletedTasks(updatedCompletedTasks);
         setCount(count);
@@ -111,6 +145,7 @@ const Tasks = ({navigation}: Props) => {
       console.log('Error updating task:', error);
     }
   };
+
   useEffect(() => {
     const loadCompletedTasks = async () => {
       try {
@@ -146,15 +181,15 @@ const Tasks = ({navigation}: Props) => {
     setShowCompletedDropdown(!showCompletedDropdown);
   };
 
-  const completeTask = async (taskId: string, pos: number) => {
+  const completeTask = async (taskId: string) => {
     const completedTaskIndex = completedTasks.findIndex(
       task => task.id === taskId,
     );
-    const place = completedTasks.find(x => x.position === pos);
     if (completedTaskIndex !== -1) {
       const completedTask = completedTasks[completedTaskIndex];
       const updatedCompletedTasks = [...completedTasks];
       updatedCompletedTasks.splice(completedTaskIndex, 1);
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setCompletedTasks(updatedCompletedTasks);
 
       setTasks(prevTasks => [...prevTasks, completedTask]);
@@ -184,220 +219,209 @@ const Tasks = ({navigation}: Props) => {
   // };
   return (
     <View style={styles.taskContainer}>
-      <ScrollView keyboardShouldPersistTaps="handled">
-        <RowContainer>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="chevron-left" size={30} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleModalOpen}>
-            <Icon name="more-vertical" size={25} color="white" />
-          </TouchableOpacity>
-        </RowContainer>
-        <HeadingText
-          textString={'Tasks'}
-          fontSize={25}
-          fontWeight="700"
-          fontFamily="SuisseIntl"
-          color="white"
-        />
+      <RowContainer>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Icon name="chevron-left" size={30} color="white" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleModalOpen}>
+          <Icon name="more-vertical" size={25} color="white" />
+        </TouchableOpacity>
+      </RowContainer>
+      <HeadingText
+        textString={'Tasks'}
+        fontSize={25}
+        fontWeight="700"
+        fontFamily="SuisseIntl"
+        color="white"
+      />
 
-        <SafeAreaView>
-          <FlatList
-            style={{marginTop: 10}}
-            data={tasks.filter(
-              task => !completedTasks.some(c => c.id === task.id),
-            )}
-            keyExtractor={item => item.key}
-            renderItem={({item}) => (
-              <TouchableOpacity
-                style={{
-                  backgroundColor: '#f2f2f2',
-                  paddingVertical: 20,
-                  paddingHorizontal: 10,
-                  borderRadius: 5,
-                  marginBottom: 3,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}
-                onPress={() => handleCompleteTask(item.id)}>
-                <Image
-                  source={require('../../../../../todo/assets/images/emptyCircle.png')}
-                  style={styles.image}
-                />
-                <HeadingText
-                  textString={item.name}
-                  fontSize={16}
-                  fontWeight="500"
-                  fontFamily="SuisseIntl"
-                />
-              </TouchableOpacity>
-            )}
-          />
-          <TouchableOpacity onPress={toggleCompletedDropdown}>
-            <Text style={{marginVertical: 10}}>
-              {`Completed ${completedTasks.length}`}
-            </Text>
-          </TouchableOpacity>
-          {showCompletedDropdown && (
-            <FlatList
-              data={completedTasks}
-              renderItem={({item}) => (
-                <TouchableOpacity
-                  key={item.key}
-                  style={{
-                    backgroundColor: '#f2f2f2',
-                    paddingVertical: 20,
-                    paddingHorizontal: 10,
-                    borderRadius: 5,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginBottom: 3,
-                  }}
-                  onPress={() => {
-                    completeTask(item.id, item.position);
-                  }}>
-                  <ImageBackground
-                    source={require('../../../../../todo/assets/images/radio-on-2x.png')}
-                    style={styles.image}>
-                    <Image
-                      source={require('../../../../../todo/assets/images/checkmark-white.png')}
-                      style={{
-                        height: 10,
-                        width: 14,
-                        resizeMode: 'contain',
-                        alignSelf: 'center',
-                        marginVertical: 6,
-                        marginHorizontal: 2,
-                      }}
-                    />
-                  </ImageBackground>
-                  <HeadingText
-                    textString={item.name}
-                    fontSize={16}
-                    fontWeight="500"
-                    fontFamily="SuisseIntl"
-                    textDecorationLine="line-through"
-                  />
-                </TouchableOpacity>
-              )}
-              keyExtractor={item => item.id.toString()}
-            />
-          )}
-        </SafeAreaView>
-
-        <View
-          style={{
-            justifyContent: 'flex-start',
-            flex: 8,
-            alignItems: 'flex-end',
-            zIndex: 999,
-          }}>
+      <FlatList
+        style={{marginTop: 10}}
+        data={tasks.filter(task => !completedTasks.some(c => c.id === task.id))}
+        keyExtractor={item => item.key}
+        renderItem={({item}) => (
           <TouchableOpacity
-            onPress={() => {
-              refRBSheet?.current?.open();
-              // handlePlusIconClick;
-            }}>
-            <View style={{flex: 1, position: 'relative'}}>
-              <Image
-                source={require('../../../../../todo/assets/images/ic_add_enable.png')}
-                style={{
-                  width: 20,
-                  height: 20,
-                  position: 'relative',
-                  justifyContent: 'flex-end',
-                  alignItems: 'flex-end',
-                }}
-              />
-            </View>
+            style={{
+              backgroundColor: '#f2f2f2',
+              paddingVertical: 20,
+              paddingHorizontal: 10,
+              borderRadius: 5,
+              marginBottom: 3,
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
+            onPress={() => handleCompleteTask(item.id)}>
+            <Image
+              source={require('../../../../../todo/assets/images/emptyCircle.png')}
+              style={styles.image}
+            />
+            <HeadingText
+              textString={item.name}
+              fontSize={16}
+              fontWeight="500"
+              fontFamily="SuisseIntl"
+            />
           </TouchableOpacity>
-        </View>
+        )}
+      />
+      <View
+        style={{
+          justifyContent: 'flex-start',
+          alignItems: 'flex-start',
+          // backgroundColor: 'black',
+          // bottom: '30%',
+        }}>
+        <TouchableOpacity onPress={toggleCompletedDropdown}>
+          <Text style={{marginVertical: 10, color: 'white'}}>
+            {completedTasks.length > 0 && `Completed ${completedTasks.length}`}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
-        <View style={styles.container}>
-          {/* Button to open modal */}
-
-          {/* Modal */}
-          <Modal
-            style={{justifyContent: 'flex-start', margin: 0}}
-            isVisible={showModal}
-            animationIn="fadeIn"
-            animationOut="fadeOut"
-            animationOutTiming={1000}
-            animationInTiming={400}
-            onBackdropPress={() => setShowModal(false)}>
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                {/* Content of the modal */}
-
-                <TouchableOpacity style={styles.imageTextContainer}>
-                  <Icon
-                    name="Sort Ascending"
-                    size={20}
-                    style={{marginRight: 20}}
-                  />
-                  <HeadingText
-                    textString={'My Day'}
-                    fontSize={16}
-                    fontWeight="500"
-                    fontFamily="SuisseIntl"
-                  />
-                </TouchableOpacity>
-
-                <HeadingText
-                  textString={'Add shortcut to homescreen'}
-                  fontSize={16}
-                  fontWeight="500"
-                  fontFamily="SuisseIntl"
-                  marginBottom={10}
+      {showCompletedDropdown && (
+        <FlatList
+          data={completedTasks}
+          renderItem={({item}) => (
+            <TouchableOpacity
+              key={item.key}
+              style={{
+                backgroundColor: '#f2f2f2',
+                paddingVertical: 20,
+                paddingHorizontal: 10,
+                borderRadius: 5,
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginBottom: 3,
+              }}
+              onPress={() => {
+                completeTask(item.id);
+              }}>
+              <ImageBackground
+                source={require('../../../../../todo/assets/images/radio-on-2x.png')}
+                style={styles.image}>
+                <Image
+                  source={require('../../../../../todo/assets/images/checkmark-white.png')}
+                  style={{
+                    height: 10,
+                    width: 14,
+                    resizeMode: 'contain',
+                    alignSelf: 'center',
+                    marginVertical: 6,
+                    marginHorizontal: 2,
+                  }}
                 />
-                <HeadingText
-                  textString={'Change'}
-                  fontSize={16}
-                  fontWeight="500"
-                  fontFamily="SuisseIntl"
-                  marginBottom={10}
-                />
-                <HeadingText
-                  textString={'Send a copy'}
-                  fontSize={16}
-                  fontWeight="500"
-                  fontFamily="SuisseIntl"
-                  marginBottom={10}
-                />
-                <HeadingText
-                  textString={'Duplicate list'}
-                  fontSize={16}
-                  fontWeight="500"
-                  fontFamily="SuisseIntl"
-                />
-                {/* Button to close modal */}
-              </View>
-            </View>
-          </Modal>
-        </View>
+              </ImageBackground>
+              <HeadingText
+                textString={item.name}
+                fontSize={16}
+                fontWeight="500"
+                fontFamily="SuisseIntl"
+                textDecorationLine="line-through"
+              />
+            </TouchableOpacity>
+          )}
+          keyExtractor={item => item.id.toString()}
+        />
+      )}
 
-        <RBSheet
-          ref={refRBSheet}
-          closeOnDragDown={false}
-          closeOnPressMask={true}
-          animationType="fade"
-          height={70}
-          customStyles={{
-            wrapper: {
-              backgroundColor: 'transparent',
-            },
-            draggableIcon: {
-              backgroundColor: '#000',
-            },
+      <View
+        style={{
+          justifyContent: 'flex-end',
+          backgroundColor: 'black',
+          flexDirection: 'row',
+        }}>
+        <TouchableOpacity
+          onPress={() => {
+            refRBSheet?.current?.open();
+            // handlePlusIconClick;
           }}>
-          <AddingTasks
-            handleAddTask={handleAddTask}
-            task={task}
-            // tasks={tasks}
-            setTask={setTask}
-            // handlePlusIconClick={handlePlusIconClick}
+          <Image
+            source={require('../../../../../todo/assets/images/ic_add_enable.png')}
+            style={{
+              width: 30,
+              height: 30,
+              // backgroundColor:'red'
+            }}
           />
-        </RBSheet>
-      </ScrollView>
+        </TouchableOpacity>
+      </View>
+
+      {/* Button to open modal */}
+
+      {/* Modal */}
+      <Modal
+        style={{justifyContent: 'flex-start', margin: 0}}
+        isVisible={showModal}
+        animationIn="fadeIn"
+        animationOut="fadeOut"
+        animationOutTiming={1000}
+        animationInTiming={400}
+        onBackdropPress={() => setShowModal(false)}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity style={styles.imageTextContainer}>
+              <Icon name="Sort Ascending" size={20} style={{marginRight: 20}} />
+              <HeadingText
+                textString={'My Day'}
+                fontSize={16}
+                fontWeight="500"
+                fontFamily="SuisseIntl"
+              />
+            </TouchableOpacity>
+            <HeadingText
+              textString={'Add shortcut to homescreen'}
+              fontSize={16}
+              fontWeight="500"
+              fontFamily="SuisseIntl"
+              marginBottom={10}
+            />
+            <HeadingText
+              textString={'Change'}
+              fontSize={16}
+              fontWeight="500"
+              fontFamily="SuisseIntl"
+              marginBottom={10}
+            />
+            <HeadingText
+              textString={'Send a copy'}
+              fontSize={16}
+              fontWeight="500"
+              fontFamily="SuisseIntl"
+              marginBottom={10}
+            />
+            <HeadingText
+              textString={'Duplicate list'}
+              fontSize={16}
+              fontWeight="500"
+              fontFamily="SuisseIntl"
+            />
+            {/* Button to close modal */}
+          </View>
+        </View>
+      </Modal>
+
+      <RBSheet
+        ref={refRBSheet}
+        closeOnDragDown={false}
+        closeOnPressMask={true}
+        animationType="fade"
+        height={70}
+        customStyles={{
+          wrapper: {
+            backgroundColor: 'transparent',
+          },
+          draggableIcon: {
+            backgroundColor: '#000',
+          },
+        }}>
+        <AddingTasks
+          handleAddTask={handleAddTask}
+          task={task}
+          // tasks={tasks}
+          setTask={setTask}
+          // handlePlusIconClick={handlePlusIconClick}
+        />
+      </RBSheet>
     </View>
   );
 };
@@ -412,10 +436,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#6eb1ff',
     padding: 10,
-  },
-  container: {
-    justifyContent: 'flex-start',
-    alignItems: 'center',
   },
   modalContainer: {
     justifyContent: 'flex-start',

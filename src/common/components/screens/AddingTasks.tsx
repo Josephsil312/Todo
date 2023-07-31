@@ -30,36 +30,3 @@ const AddingTasks = (props: {
 
 export default AddingTasks;
 
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: '#fff',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//     padding: 20,
-//   },
-//   heading: {
-//     fontSize: 24,
-//     fontWeight: 'bold',
-//     marginBottom: 20,
-//   },
-//   addButton: {
-//     backgroundColor: 'blue',
-//     padding: 10,
-//     borderRadius: 5,
-//   },
-//   addButtonText: {
-//     color: '#fff',
-//     fontWeight: 'bold',
-//   },
-//   taskList: {
-//     flex: 1,
-//     alignSelf: 'stretch',
-//   },
-//   taskItem: {
-//     backgroundColor: '#f0f0f0',
-//     padding: 10,
-//     marginVertical: 5,
-//     borderRadius: 5,
-//   },
-// });
