@@ -33,9 +33,9 @@ export const HeadingTextStyle = styled.Text<HeadingTextProps>`
 `;
 
 export const RowContainer = styled.View`
-  flex-direction: row;
   align-items: center;
   justify-content: space-between;
+  flex-direction: row;
 `;
 
 export const TextInputSingleLine = styled.TextInput.attrs<TextInputProps>(
