@@ -11,7 +11,6 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
-  PanResponder,
 } from 'react-native';
 import React, {useState, useRef, useEffect} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -35,6 +34,7 @@ const Tasks = ({navigation}: Props) => {
   const [count, setCount] = useState(0);
   const fadeInAnimation = useRef(new Animated.Value(0)).current;
   const slideInAnimation = useRef(new Animated.Value(100)).current;
+  const inputRef = useRef<AddingTasks | null>(null);
   const [tasks, setTasks] = useState<
     {
       id: string;
@@ -84,6 +84,13 @@ const Tasks = ({navigation}: Props) => {
       UIManager.setLayoutAnimationEnabledExperimental(true);
   }
   const handleAddTask = async () => {
+    // Keyboard.dismiss();
+    // // refRBSheet?.current?.open();
+
+    // if (inputRef.current) {
+    //   inputRef.current.focus();
+    // }
+    // refRBSheet?.current?.open();
     if (task.trim() !== '') {
       Keyboard.dismiss();
       const taskId = Date.now().toString();
@@ -217,6 +224,7 @@ const Tasks = ({navigation}: Props) => {
   // const place = (arr, index, element) => {
   //   return arr.splice(index, 0, element);
   // };
+
   return (
     <View style={styles.taskContainer}>
       <RowContainer>
@@ -327,13 +335,19 @@ const Tasks = ({navigation}: Props) => {
       <View
         style={{
           justifyContent: 'flex-end',
-          backgroundColor: 'black',
           flexDirection: 'row',
         }}>
         <TouchableOpacity
           onPress={() => {
-            refRBSheet?.current?.open();
-            // handlePlusIconClick;
+            if (refRBSheet?.current) {
+              refRBSheet.current.open();
+              setTimeout(() => {
+                Keyboard.dismiss();
+                if (inputRef.current) {
+                  inputRef.current.focus();
+                }
+              }, 100);
+            }
           }}>
           <Image
             source={require('../../../../../todo/assets/images/ic_add_enable.png')}
@@ -420,6 +434,7 @@ const Tasks = ({navigation}: Props) => {
           // tasks={tasks}
           setTask={setTask}
           // handlePlusIconClick={handlePlusIconClick}
+          inputRef={inputRef}
         />
       </RBSheet>
     </View>
