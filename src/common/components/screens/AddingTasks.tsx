@@ -31,4 +31,3 @@ const AddingTasks = (props: {
 };
 
 export default AddingTasks;
-

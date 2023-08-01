@@ -5,7 +5,6 @@ import {
   FlatList,
   Keyboard,
   Text,
-  Animated,
   Image,
   ImageBackground,
   LayoutAnimation,
@@ -31,10 +30,7 @@ const Tasks = ({navigation}: Props) => {
   const [showModal, setShowModal] = useState(false);
   const refRBSheet = useRef<RBSheet>(null);
   const [task, setTask] = useState('');
-  const [count, setCount] = useState(0);
-  const fadeInAnimation = useRef(new Animated.Value(0)).current;
-  const slideInAnimation = useRef(new Animated.Value(100)).current;
-  const inputRef = useRef<AddingTasks | null>(null);
+  const inputRef = useRef<RBSheet>(null);
   const [tasks, setTasks] = useState<
     {
       id: string;
@@ -51,54 +47,21 @@ const Tasks = ({navigation}: Props) => {
       key: string;
     }[]
   >([]);
-  const fadeInStyle = {
-    opacity: fadeInAnimation,
-  };
-  const slideInStyle = {
-    transform: [
-      {
-        translateY: slideInAnimation,
-      },
-    ],
-  };
+
   const [showCompletedDropdown, setShowCompletedDropdown] = useState(false);
 
-  // const handleAddTask = async () => {
-  //   if (task.trim() !== '') {
-  //     Keyboard.dismiss();
-  //     const taskId = Date.now().toString();
-  //     const newTask = {id: taskId, name: task, position: count};
-  //     const updatedTasks = [...tasks, newTask];
-  //     setTasks(updatedTasks);
-  //     setTask('');
-  //     setCount(prev => prev + 1);
-  //     try {
-  //       await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
-  //     } catch (error) {
-  //       console.log('Error saving tasks to AsyncStorage:', error);
-  //     }
-  //   }
-  // };
   if (Platform.OS === 'android') {
     UIManager.setLayoutAnimationEnabledExperimental &&
       UIManager.setLayoutAnimationEnabledExperimental(true);
   }
   const handleAddTask = async () => {
-    // Keyboard.dismiss();
-    // // refRBSheet?.current?.open();
-
-    // if (inputRef.current) {
-    //   inputRef.current.focus();
-    // }
-    // refRBSheet?.current?.open();
     if (task.trim() !== '') {
       Keyboard.dismiss();
       const taskId = Date.now().toString();
-      const newTask = {id: taskId, name: task, position: count};
+      const newTask = {id: taskId, name: task};
       const updatedTasks = [...tasks, newTask];
       setTasks(updatedTasks);
       setTask('');
-      setCount(prev => prev + 1);
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       try {
         await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
@@ -141,7 +104,6 @@ const Tasks = ({navigation}: Props) => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setTasks(updatedTasks);
         setCompletedTasks(updatedCompletedTasks);
-        setCount(count);
         await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
         await AsyncStorage.setItem(
           'completedTasks',
@@ -200,9 +162,6 @@ const Tasks = ({navigation}: Props) => {
       setCompletedTasks(updatedCompletedTasks);
 
       setTasks(prevTasks => [...prevTasks, completedTask]);
-      setCount(count);
-
-      // console.log(place);
       try {
         await AsyncStorage.setItem(
           'completedTasks',
@@ -217,13 +176,6 @@ const Tasks = ({navigation}: Props) => {
       }
     }
   };
-
-  // console.log('tasks', tasks);
-  // console.log('task from the input', task);
-  // console.log('completedTasks', completedTasks);
-  // const place = (arr, index, element) => {
-  //   return arr.splice(index, 0, element);
-  // };
 
   return (
     <View style={styles.taskContainer}>
@@ -276,8 +228,6 @@ const Tasks = ({navigation}: Props) => {
         style={{
           justifyContent: 'flex-start',
           alignItems: 'flex-start',
-          // backgroundColor: 'black',
-          // bottom: '30%',
         }}>
         <TouchableOpacity onPress={toggleCompletedDropdown}>
           <Text style={{marginVertical: 10, color: 'white'}}>
@@ -354,7 +304,6 @@ const Tasks = ({navigation}: Props) => {
             style={{
               width: 30,
               height: 30,
-              // backgroundColor:'red'
             }}
           />
         </TouchableOpacity>
@@ -431,9 +380,7 @@ const Tasks = ({navigation}: Props) => {
         <AddingTasks
           handleAddTask={handleAddTask}
           task={task}
-          // tasks={tasks}
           setTask={setTask}
-          // handlePlusIconClick={handlePlusIconClick}
           inputRef={inputRef}
         />
       </RBSheet>
