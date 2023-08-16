@@ -21,6 +21,7 @@ import {RowContainer} from '../../../styled';
 // import Icon from 'react-native-vector-icons/FontAwesome';
 import Icon from 'react-native-vector-icons/Feather';
 import {NavigationProp, ParamListBase} from '@react-navigation/native';
+import {Swipeable, GestureHandlerRootView} from 'react-native-gesture-handler';
 
 interface Props {
   navigation: NavigationProp<ParamListBase>;
@@ -148,6 +149,7 @@ const Tasks = ({navigation}: Props) => {
 
   const toggleCompletedDropdown = () => {
     setShowCompletedDropdown(!showCompletedDropdown);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
   };
 
   const completeTask = async (taskId: string) => {
@@ -177,6 +179,29 @@ const Tasks = ({navigation}: Props) => {
     }
   };
 
+  const leftSwipe = () => {
+    // return (
+    //   <View>
+    //     <Text>Delete</Text>
+    //   </View>
+    // );
+  };
+  const rightSwipe = () => {
+    return (
+      <View
+        style={{
+          backgroundColor: 'red',
+          width: '80%',
+          borderRadius: 5,
+          height: 62,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
+        <TouchableOpacity />
+        <Text>Delete</Text>
+      </View>
+    );
+  };
   return (
     <View style={styles.taskContainer}>
       <RowContainer>
@@ -200,30 +225,39 @@ const Tasks = ({navigation}: Props) => {
         data={tasks.filter(task => !completedTasks.some(c => c.id === task.id))}
         keyExtractor={item => item.key}
         renderItem={({item}) => (
-          <TouchableOpacity
-            style={{
-              backgroundColor: '#f2f2f2',
-              paddingVertical: 20,
-              paddingHorizontal: 10,
-              borderRadius: 5,
-              marginBottom: 3,
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}
-            onPress={() => handleCompleteTask(item.id)}>
-            <Image
-              source={require('../../../../../todo/assets/images/emptyCircle.png')}
-              style={styles.image}
-            />
-            <HeadingText
-              textString={item.name}
-              fontSize={16}
-              fontWeight="500"
-              fontFamily="SuisseIntl"
-            />
-          </TouchableOpacity>
+          <GestureHandlerRootView>
+            <Swipeable
+              renderRightActions={rightSwipe}
+              onSwipeableOpen={() => {
+                console.log('open');
+              }}>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: '#f2f2f2',
+                  paddingVertical: 20,
+                  paddingHorizontal: 10,
+                  borderRadius: 5,
+                  marginBottom: 3,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}
+                onPress={() => handleCompleteTask(item.id)}>
+                <Image
+                  source={require('../../../../../todo/assets/images/emptyCircle.png')}
+                  style={styles.image}
+                />
+                <HeadingText
+                  textString={item.name}
+                  fontSize={16}
+                  fontWeight="500"
+                  fontFamily="SuisseIntl"
+                />
+              </TouchableOpacity>
+            </Swipeable>
+          </GestureHandlerRootView>
         )}
       />
+
       <View
         style={{
           justifyContent: 'flex-start',
