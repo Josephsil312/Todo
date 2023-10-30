@@ -243,7 +243,7 @@ const Tasks = ({navigation}: Props) => {
                 }}
                 onPress={() => handleCompleteTask(item.id)}>
                 <Image
-                  source={require('../../../../../todo/assets/images/emptyCircle.png')}
+                  source={require('../../../../assets/images/emptyCircle.png')}
                   style={styles.image}
                 />
                 <HeadingText
@@ -289,10 +289,10 @@ const Tasks = ({navigation}: Props) => {
                 completeTask(item.id);
               }}>
               <ImageBackground
-                source={require('../../../../../todo/assets/images/radio-on-2x.png')}
+                source={require('../../../../assets/images/radio-on-2x.png')}
                 style={styles.image}>
                 <Image
-                  source={require('../../../../../todo/assets/images/checkmark-white.png')}
+                  source={require('../../../../assets/images/checkmark-white.png')}
                   style={{
                     height: 10,
                     width: 14,
@@ -334,7 +334,7 @@ const Tasks = ({navigation}: Props) => {
             }
           }}>
           <Image
-            source={require('../../../../../todo/assets/images/ic_add_enable.png')}
+            source={require('../../../../assets/images/ic_add_enable.png')}
             style={{
               width: 30,
               height: 30,
