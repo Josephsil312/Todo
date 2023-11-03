@@ -11,23 +11,23 @@ import {
   Platform,
   UIManager,
 } from 'react-native';
-import React, {useState, useRef, useEffect} from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RBSheet from 'react-native-raw-bottom-sheet';
-import {HeadingText} from '../../Texts';
+import { HeadingText } from '../../Texts';
 import Modal from 'react-native-modal';
 import AddingTasks from './AddingTasks';
-import {RowContainer} from '../../../styled';
+import { RowContainer } from '../../../styled';
 // import Icon from 'react-native-vector-icons/FontAwesome';
 import Icon from 'react-native-vector-icons/Feather';
-import {NavigationProp, ParamListBase} from '@react-navigation/native';
-import {Swipeable, GestureHandlerRootView} from 'react-native-gesture-handler';
-
+import { NavigationProp, ParamListBase } from '@react-navigation/native';
+import { Swipeable, GestureHandlerRootView } from 'react-native-gesture-handler';
+import CheckBox from '@react-native-community/checkbox';
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
 
-const Tasks = ({navigation}: Props) => {
+const Tasks = ({ navigation }: Props) => {
   const [showModal, setShowModal] = useState(false);
   const refRBSheet = useRef<RBSheet>(null);
   const [task, setTask] = useState('');
@@ -50,6 +50,7 @@ const Tasks = ({navigation}: Props) => {
   >([]);
 
   const [showCompletedDropdown, setShowCompletedDropdown] = useState(false);
+  const [toggleCheckBox, setToggleCheckBox] = useState(false)
 
   if (Platform.OS === 'android') {
     UIManager.setLayoutAnimationEnabledExperimental &&
@@ -59,7 +60,7 @@ const Tasks = ({navigation}: Props) => {
     if (task.trim() !== '') {
       Keyboard.dismiss();
       const taskId = Date.now().toString();
-      const newTask = {id: taskId, name: task};
+      const newTask = { id: taskId, name: task };
       const updatedTasks = [...tasks, newTask];
       setTasks(updatedTasks);
       setTask('');
@@ -179,13 +180,13 @@ const Tasks = ({navigation}: Props) => {
     }
   };
 
-  const leftSwipe = () => {
-    // return (
-    //   <View>
-    //     <Text>Delete</Text>
-    //   </View>
-    // );
-  };
+  // const leftSwipe = () => {
+  //   // return (
+  //   //   <View>
+  //   //     <Text>Delete</Text>
+  //   //   </View>
+  //   // );
+  // };
   const rightSwipe = () => {
     return (
       <View
@@ -217,14 +218,14 @@ const Tasks = ({navigation}: Props) => {
         fontSize={25}
         fontWeight="700"
         fontFamily="SuisseIntl"
-        color="white"
+        color="black"
       />
 
       <FlatList
-        style={{marginTop: 10}}
+        style={{ marginTop: 10 }}
         data={tasks.filter(task => !completedTasks.some(c => c.id === task.id))}
         keyExtractor={item => item.key}
-        renderItem={({item}) => (
+        renderItem={({ item }) => (
           <GestureHandlerRootView>
             <Swipeable
               renderRightActions={rightSwipe}
@@ -233,13 +234,24 @@ const Tasks = ({navigation}: Props) => {
               }}>
               <TouchableOpacity
                 style={{
-                  backgroundColor: '#f2f2f2',
+                  elevation:4,
                   paddingVertical: 20,
                   paddingHorizontal: 10,
-                  borderRadius: 5,
-                  marginBottom: 3,
+                  borderRadius: 20,
+                  marginBottom: 5,
                   flexDirection: 'row',
                   alignItems: 'center',
+                  shadowColor: '#005F8D',
+                  backgroundColor: 'white',
+                  shadowOffset: {
+                    width: 0,
+                    height: 2,
+                  },
+                  shadowOpacity: 0.6,
+                  shadowRadius: 10,
+                  borderWidth:1,
+                borderColor:'#004364'
+                  
                 }}
                 onPress={() => handleCompleteTask(item.id)}>
                 <Image
@@ -264,7 +276,7 @@ const Tasks = ({navigation}: Props) => {
           alignItems: 'flex-start',
         }}>
         <TouchableOpacity onPress={toggleCompletedDropdown}>
-          <Text style={{marginVertical: 10, color: 'white'}}>
+          <Text style={{ marginVertical: 10, color: 'black' }}>
             {completedTasks.length > 0 && `Completed ${completedTasks.length}`}
           </Text>
         </TouchableOpacity>
@@ -273,36 +285,45 @@ const Tasks = ({navigation}: Props) => {
       {showCompletedDropdown && (
         <FlatList
           data={completedTasks}
-          renderItem={({item}) => (
+          renderItem={({ item }) => (
             <TouchableOpacity
               key={item.key}
               style={{
-                backgroundColor: '#f2f2f2',
+                shadowColor: '#005F8D',
+                  backgroundColor: 'white',
+                  shadowOffset: {
+                    width: 0,
+                    height: 2,
+                  },
+                  shadowOpacity: 0.6,
+                  shadowRadius:20,
                 paddingVertical: 20,
                 paddingHorizontal: 10,
-                borderRadius: 5,
+                borderRadius: 20,
                 flexDirection: 'row',
                 alignItems: 'center',
-                marginBottom: 3,
+                marginBottom: 6,
+                elevation:4,
+                borderWidth:1,
+                borderColor:'#004364'
               }}
               onPress={() => {
                 completeTask(item.id);
               }}>
-              <ImageBackground
-                source={require('../../../../assets/images/radio-on-2x.png')}
-                style={styles.image}>
+              
                 <Image
-                  source={require('../../../../assets/images/checkmark-white.png')}
-                  style={{
-                    height: 10,
-                    width: 14,
-                    resizeMode: 'contain',
-                    alignSelf: 'center',
-                    marginVertical: 6,
-                    marginHorizontal: 2,
-                  }}
+                  source={require('../../../../assets/images/checkedCircle.png')}
+                  // style={{
+                  //   height: 10,
+                  //   width: 14,
+                  //   resizeMode: 'contain',
+                  //   alignSelf: 'center',
+                  //   marginVertical: 6,
+                  //   marginHorizontal: 2,
+                  // }}
+                  style={styles.image}
                 />
-              </ImageBackground>
+           
               <HeadingText
                 textString={item.name}
                 fontSize={16}
@@ -347,7 +368,7 @@ const Tasks = ({navigation}: Props) => {
 
       {/* Modal */}
       <Modal
-        style={{justifyContent: 'flex-start', margin: 0}}
+        style={{ justifyContent: 'flex-start', margin: 0 }}
         isVisible={showModal}
         animationIn="fadeIn"
         animationOut="fadeOut"
@@ -357,7 +378,7 @@ const Tasks = ({navigation}: Props) => {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <TouchableOpacity style={styles.imageTextContainer}>
-              <Icon name="Sort Ascending" size={20} style={{marginRight: 20}} />
+              <Icon name="Sort Ascending" size={20} style={{ marginRight: 20 }} />
               <HeadingText
                 textString={'My Day'}
                 fontSize={16}
@@ -430,7 +451,7 @@ const styles = StyleSheet.create({
   },
   taskContainer: {
     flex: 1,
-    backgroundColor: '#6eb1ff',
+    backgroundColor: '#F0F8FF',
     padding: 10,
   },
   modalContainer: {
@@ -453,3 +474,4 @@ const styles = StyleSheet.create({
   },
 });
 export default Tasks;
+
