@@ -32,6 +32,7 @@ export interface HeadingTextProps {
   borderRadius?: number;
   marginVertical?: number;
   textDecorationLine?: string;
+  justifyContent?: string;
 }
 
 export interface TextInputProps {
