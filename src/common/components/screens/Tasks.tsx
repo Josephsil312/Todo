@@ -30,7 +30,7 @@ const Tasks = ({ navigation }: Props) => {
   const [showModal, setShowModal] = useState(false);
   const refRBSheet = useRef<RBSheet>(null);
   const [task, setTask] = useState('');
-  const [star, setStar] = useState(false)
+  const [star, setStar] = useState(true)
   const inputRef = useRef<RBSheet>(null);
   const [tasks, setTasks] = useState<
     {
@@ -248,7 +248,7 @@ const Tasks = ({ navigation }: Props) => {
                   width: '100%'
                 }}
               >
-                <View style={{ flexDirection: 'row',alignItems:'center' }}>
+                <View style={{ flexDirection: 'row',alignItems:'flex-end' }}>
                   <TouchableOpacity onPress={() => handleCompleteTask(item.id)}>
                     <Image
                       source={require('../../../../assets/images/emptyCircle.png')}
