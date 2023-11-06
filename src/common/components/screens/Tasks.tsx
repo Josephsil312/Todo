@@ -6,7 +6,6 @@ import {
   Keyboard,
   Text,
   Image,
-  ImageBackground,
   LayoutAnimation,
   Platform,
   UIManager,
@@ -19,10 +18,9 @@ import Modal from 'react-native-modal';
 import AddingTasks from './AddingTasks';
 import { RowContainer } from '../../../styled';
 // import Icon from 'react-native-vector-icons/FontAwesome';
-import Icon from 'react-native-vector-icons/Feather';
 import { NavigationProp, ParamListBase } from '@react-navigation/native';
 import { Swipeable, GestureHandlerRootView } from 'react-native-gesture-handler';
-import CheckBox from '@react-native-community/checkbox';
+
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
@@ -31,6 +29,7 @@ const Tasks = ({ navigation }: Props) => {
   const [showModal, setShowModal] = useState(false);
   const refRBSheet = useRef<RBSheet>(null);
   const [task, setTask] = useState('');
+  const [star,setStar] = useState(false)
   const inputRef = useRef<RBSheet>(null);
   const [tasks, setTasks] = useState<
     {
@@ -180,13 +179,6 @@ const Tasks = ({ navigation }: Props) => {
     }
   };
 
-  // const leftSwipe = () => {
-  //   // return (
-  //   //   <View>
-  //   //     <Text>Delete</Text>
-  //   //   </View>
-  //   // );
-  // };
   const rightSwipe = () => {
     return (
       <View
@@ -203,14 +195,17 @@ const Tasks = ({ navigation }: Props) => {
       </View>
     );
   };
+  const starChange = () => {
+    setStar((prev) => !prev)
+  }
   return (
     <View style={styles.taskContainer}>
       <RowContainer>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="chevron-left" size={30} color="white" />
+          <Image source={require('../../../../assets/images/chevron_left.png')} style={{ width: 30, height: 30 }} />
         </TouchableOpacity>
         <TouchableOpacity onPress={handleModalOpen}>
-          <Icon name="more-vertical" size={25} color="white" />
+          {/* <Icon name="more-vertical" size={25} color="white" /> */}
         </TouchableOpacity>
       </RowContainer>
       <HeadingText
@@ -226,21 +221,18 @@ const Tasks = ({ navigation }: Props) => {
         data={tasks.filter(task => !completedTasks.some(c => c.id === task.id))}
         keyExtractor={item => item.key}
         renderItem={({ item }) => (
-          <GestureHandlerRootView>
-            <Swipeable
-              renderRightActions={rightSwipe}
-              onSwipeableOpen={() => {
-                console.log('open');
-              }}>
+          <>
+            <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
               <TouchableOpacity
                 style={{
-                  elevation:4,
+                  elevation: 4,
                   paddingVertical: 20,
                   paddingHorizontal: 10,
                   borderRadius: 20,
-                  marginBottom: 5,
-                  flexDirection: 'row',
                   alignItems: 'center',
+                  marginBottom: 6,
+                  justifyContent: 'space-between',
+                  flexDirection: 'row',
                   shadowColor: '#005F8D',
                   backgroundColor: 'white',
                   shadowOffset: {
@@ -249,25 +241,31 @@ const Tasks = ({ navigation }: Props) => {
                   },
                   shadowOpacity: 0.6,
                   shadowRadius: 10,
-                  borderWidth:1,
-                borderColor:'#004364'
-                  
+                  borderWidth: 1,
+                  borderColor: '#004364',
+                  width: '100%'
                 }}
                 onPress={() => handleCompleteTask(item.id)}>
-                <Image
-                  source={require('../../../../assets/images/emptyCircle.png')}
-                  style={styles.image}
-                />
-                <HeadingText
-                  textString={item.name}
-                  fontSize={16}
-                  fontWeight="500"
-                  fontFamily="SuisseIntl"
-                />
+                <View style={{ flexDirection: 'row' }}>
+                  <Image
+                    source={require('../../../../assets/images/emptyCircle.png')}
+                    style={styles.image}
+                  />
+                  <HeadingText
+                    textString={item.name}
+                    fontSize={16}
+                    fontWeight="500"
+                    fontFamily="SuisseIntl"
+                  />
+                </View>
+                <TouchableOpacity onPress={starChange}>
+                <Image source={star ? require('../../../../assets/images/star.png') :require('../../../../assets/images/starfilled.png') } />
+                </TouchableOpacity>
+                
               </TouchableOpacity>
-            </Swipeable>
-          </GestureHandlerRootView>
-        )}
+            </View>
+          </>
+          )}
       />
 
       <View
@@ -286,53 +284,53 @@ const Tasks = ({ navigation }: Props) => {
         <FlatList
           data={completedTasks}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              key={item.key}
-              style={{
-                shadowColor: '#005F8D',
-                  backgroundColor: 'white',
-                  shadowOffset: {
-                    width: 0,
-                    height: 2,
-                  },
-                  shadowOpacity: 0.6,
-                  shadowRadius:20,
-                paddingVertical: 20,
-                paddingHorizontal: 10,
-                borderRadius: 20,
-                flexDirection: 'row',
-                alignItems: 'center',
-                marginBottom: 6,
-                elevation:4,
-                borderWidth:1,
-                borderColor:'#004364'
-              }}
-              onPress={() => {
-                completeTask(item.id);
-              }}>
-              
-                <Image
-                  source={require('../../../../assets/images/checkedCircle.png')}
-                  // style={{
-                  //   height: 10,
-                  //   width: 14,
-                  //   resizeMode: 'contain',
-                  //   alignSelf: 'center',
-                  //   marginVertical: 6,
-                  //   marginHorizontal: 2,
-                  // }}
-                  style={styles.image}
-                />
-           
-              <HeadingText
-                textString={item.name}
-                fontSize={16}
-                fontWeight="500"
-                fontFamily="SuisseIntl"
-                textDecorationLine="line-through"
-              />
-            </TouchableOpacity>
-          )}
+            <>
+              <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+                <TouchableOpacity
+                  key={item.key}
+                  style={{
+                    shadowColor: '#005F8D',
+                    backgroundColor: 'white',
+                    shadowOffset: {
+                      width: 0,
+                      height: 2,
+                    },
+                    shadowOpacity: 0.6,
+                    shadowRadius: 20,
+                    paddingVertical: 20,
+                    paddingHorizontal: 10,
+                    borderRadius: 20,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginBottom: 6,
+                    justifyContent: 'space-between',
+                    elevation: 4,
+                    borderWidth: 1,
+                    borderColor: '#004364',
+                    width: '100%'
+                  }}
+                  onPress={() => {
+                    completeTask(item.id);
+                  }}>
+                  <View style={{ flexDirection: 'row' }}>
+                    <Image
+                      source={require('../../../../assets/images/checkedCircle.png')}
+                      style={{ height: 25, width: 25 }}
+                    />
+                    <HeadingText
+                      textString={item.name}
+                      fontSize={16}
+                      fontWeight="500"
+                      fontFamily="SuisseIntl"
+                      textDecorationLine="line-through"
+                      marginLeft={10}
+                    />
+                  </View>
+                  <Image source={require('../../../../assets/images/star.png')} />
+                </TouchableOpacity>
+              </View>
+            </>)}
+
           keyExtractor={item => item.id.toString()}
         />
       )}
@@ -355,10 +353,11 @@ const Tasks = ({ navigation }: Props) => {
             }
           }}>
           <Image
-            source={require('../../../../assets/images/ic_add_enable.png')}
+            source={require('../../../../assets/images/add.png')}
             style={{
-              width: 30,
-              height: 30,
+              width: 70,
+              height: 70,
+              position: 'relative'
             }}
           />
         </TouchableOpacity>
@@ -378,7 +377,7 @@ const Tasks = ({ navigation }: Props) => {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <TouchableOpacity style={styles.imageTextContainer}>
-              <Icon name="Sort Ascending" size={20} style={{ marginRight: 20 }} />
+              {/* <Icon name="Sort Ascending" size={20} style={{ marginRight: 20 }} /> */}
               <HeadingText
                 textString={'My Day'}
                 fontSize={16}
@@ -445,9 +444,9 @@ const Tasks = ({ navigation }: Props) => {
 
 const styles = StyleSheet.create({
   image: {
-    width: 22,
-    height: 22,
-    marginRight: 15,
+    width: 20,
+    height: 20,
+    marginRight: 13,
   },
   taskContainer: {
     flex: 1,
