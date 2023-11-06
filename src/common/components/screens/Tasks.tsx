@@ -9,6 +9,7 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  TouchableWithoutFeedback
 } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -29,7 +30,7 @@ const Tasks = ({ navigation }: Props) => {
   const [showModal, setShowModal] = useState(false);
   const refRBSheet = useRef<RBSheet>(null);
   const [task, setTask] = useState('');
-  const [star,setStar] = useState(false)
+  const [star, setStar] = useState(false)
   const inputRef = useRef<RBSheet>(null);
   const [tasks, setTasks] = useState<
     {
@@ -224,6 +225,7 @@ const Tasks = ({ navigation }: Props) => {
           <>
             <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
               <TouchableOpacity
+                activeOpacity={1}
                 style={{
                   elevation: 4,
                   paddingVertical: 20,
@@ -245,12 +247,14 @@ const Tasks = ({ navigation }: Props) => {
                   borderColor: '#004364',
                   width: '100%'
                 }}
-                onPress={() => handleCompleteTask(item.id)}>
-                <View style={{ flexDirection: 'row' }}>
-                  <Image
-                    source={require('../../../../assets/images/emptyCircle.png')}
-                    style={styles.image}
-                  />
+              >
+                <View style={{ flexDirection: 'row',alignItems:'center' }}>
+                  <TouchableOpacity onPress={() => handleCompleteTask(item.id)}>
+                    <Image
+                      source={require('../../../../assets/images/emptyCircle.png')}
+                      style={styles.image}
+                    />
+                  </TouchableOpacity>
                   <HeadingText
                     textString={item.name}
                     fontSize={16}
@@ -258,14 +262,14 @@ const Tasks = ({ navigation }: Props) => {
                     fontFamily="SuisseIntl"
                   />
                 </View>
-                <TouchableOpacity onPress={starChange}>
-                <Image source={star ? require('../../../../assets/images/star.png') :require('../../../../assets/images/starfilled.png') } />
+                <TouchableOpacity activeOpacity={1} onPress={starChange}>
+                  <Image source={star ? require('../../../../assets/images/star.png') : require('../../../../assets/images/starfilled.png')} />
                 </TouchableOpacity>
-                
+
               </TouchableOpacity>
             </View>
           </>
-          )}
+        )}
       />
 
       <View
@@ -273,7 +277,7 @@ const Tasks = ({ navigation }: Props) => {
           justifyContent: 'flex-start',
           alignItems: 'flex-start',
         }}>
-        <TouchableOpacity onPress={toggleCompletedDropdown}>
+        <TouchableOpacity activeOpacity={1} onPress={toggleCompletedDropdown}>
           <Text style={{ marginVertical: 10, color: 'black' }}>
             {completedTasks.length > 0 && `Completed ${completedTasks.length}`}
           </Text>
@@ -287,6 +291,7 @@ const Tasks = ({ navigation }: Props) => {
             <>
               <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
                 <TouchableOpacity
+                  activeOpacity={1}
                   key={item.key}
                   style={{
                     shadowColor: '#005F8D',
@@ -309,14 +314,17 @@ const Tasks = ({ navigation }: Props) => {
                     borderColor: '#004364',
                     width: '100%'
                   }}
-                  onPress={() => {
-                    completeTask(item.id);
-                  }}>
+                >
                   <View style={{ flexDirection: 'row' }}>
-                    <Image
-                      source={require('../../../../assets/images/checkedCircle.png')}
-                      style={{ height: 25, width: 25 }}
-                    />
+                    <TouchableOpacity onPress={() => {
+                      completeTask(item.id);
+                    }}>
+                      <Image
+                        source={require('../../../../assets/images/checkedCircle.png')}
+                        style={{ height: 25, width: 25 }}
+                      />
+                    </TouchableOpacity>
+
                     <HeadingText
                       textString={item.name}
                       fontSize={16}
