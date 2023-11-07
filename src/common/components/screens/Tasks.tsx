@@ -9,7 +9,8 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  ScrollView
 } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,7 +21,7 @@ import AddingTasks from './AddingTasks';
 import { RowContainer } from '../../../styled';
 // import Icon from 'react-native-vector-icons/FontAwesome';
 import { NavigationProp, ParamListBase } from '@react-navigation/native';
-import { Swipeable, GestureHandlerRootView } from 'react-native-gesture-handler';
+
 
 interface Props {
   navigation: NavigationProp<ParamListBase>;
@@ -200,100 +201,42 @@ const Tasks = ({ navigation }: Props) => {
     setStar((prev) => !prev)
   }
   return (
-    <View style={styles.taskContainer}>
-      <RowContainer>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Image source={require('../../../../assets/images/chevron_left.png')} style={{ width: 30, height: 30 }} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleModalOpen}>
-          {/* <Icon name="more-vertical" size={25} color="white" /> */}
-        </TouchableOpacity>
-      </RowContainer>
-      <HeadingText
-        textString={'Tasks'}
-        fontSize={25}
-        fontWeight="700"
-        fontFamily="SuisseIntl"
-        color="black"
-      />
+    <>
+    <ScrollView style={styles.taskContainer}>
+        <RowContainer>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Image source={require('../../../../assets/images/chevron_left.png')} style={{ width: 30, height: 30 }} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleModalOpen}>
+            {/* <Icon name="more-vertical" size={25} color="white" /> */}
+          </TouchableOpacity>
+        </RowContainer>
+        <HeadingText
+          textString={'Tasks'}
+          fontSize={25}
+          fontWeight="700"
+          fontFamily="SuisseIntl"
+          color="black"
+        />
 
-      <FlatList
-        style={{ marginTop: 10 }}
-        data={tasks.filter(task => !completedTasks.some(c => c.id === task.id))}
-        keyExtractor={item => item.key}
-        renderItem={({ item }) => (
-          <>
-            <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-              <TouchableOpacity
-                activeOpacity={1}
-                style={{
-                  elevation: 4,
-                  paddingVertical: 20,
-                  paddingHorizontal: 10,
-                  borderRadius: 20,
-                  alignItems: 'center',
-                  marginBottom: 6,
-                  justifyContent: 'space-between',
-                  flexDirection: 'row',
-                  shadowColor: '#005F8D',
-                  backgroundColor: 'white',
-                  shadowOffset: {
-                    width: 0,
-                    height: 2,
-                  },
-                  shadowOpacity: 0.6,
-                  shadowRadius: 10,
-                  borderWidth: 1,
-                  borderColor: '#004364',
-                  width: '100%'
-                }}
-              >
-                <View style={{ flexDirection: 'row',alignItems:'flex-end' }}>
-                  <TouchableOpacity onPress={() => handleCompleteTask(item.id)}>
-                    <Image
-                      source={require('../../../../assets/images/emptyCircle.png')}
-                      style={styles.image}
-                    />
-                  </TouchableOpacity>
-                  <HeadingText
-                    textString={item.name}
-                    fontSize={16}
-                    fontWeight="500"
-                    fontFamily="SuisseIntl"
-                  />
-                </View>
-                <TouchableOpacity activeOpacity={1} onPress={starChange}>
-                  <Image source={star ? require('../../../../assets/images/star.png') : require('../../../../assets/images/starfilled.png')} />
-                </TouchableOpacity>
-
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
-      />
-
-      <View
-        style={{
-          justifyContent: 'flex-start',
-          alignItems: 'flex-start',
-        }}>
-        <TouchableOpacity activeOpacity={1} onPress={toggleCompletedDropdown}>
-          <Text style={{ marginVertical: 10, color: 'black' }}>
-            {completedTasks.length > 0 && `Completed ${completedTasks.length}`}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {showCompletedDropdown && (
         <FlatList
-          data={completedTasks}
+          style={{ marginTop: 10 }}
+          data={tasks.filter(task => !completedTasks.some(c => c.id === task.id))}
+          keyExtractor={item => item.key}
           renderItem={({ item }) => (
             <>
               <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
                 <TouchableOpacity
                   activeOpacity={1}
-                  key={item.key}
                   style={{
+                    elevation: 4,
+                    paddingVertical: 20,
+                    paddingHorizontal: 10,
+                    borderRadius: 20,
+                    alignItems: 'center',
+                    marginBottom: 6,
+                    justifyContent: 'space-between',
+                    flexDirection: 'row',
                     shadowColor: '#005F8D',
                     backgroundColor: 'white',
                     shadowOffset: {
@@ -301,152 +244,161 @@ const Tasks = ({ navigation }: Props) => {
                       height: 2,
                     },
                     shadowOpacity: 0.6,
-                    shadowRadius: 20,
-                    paddingVertical: 20,
-                    paddingHorizontal: 10,
-                    borderRadius: 20,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginBottom: 6,
-                    justifyContent: 'space-between',
-                    elevation: 4,
+                    shadowRadius: 10,
                     borderWidth: 1,
                     borderColor: '#004364',
                     width: '100%'
                   }}
                 >
-                  <View style={{ flexDirection: 'row' }}>
-                    <TouchableOpacity onPress={() => {
-                      completeTask(item.id);
-                    }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+                    <TouchableOpacity onPress={() => handleCompleteTask(item.id)}>
                       <Image
-                        source={require('../../../../assets/images/checkedCircle.png')}
-                        style={{ height: 25, width: 25 }}
+                        source={require('../../../../assets/images/emptyCircle.png')}
+                        style={styles.image}
                       />
                     </TouchableOpacity>
-
                     <HeadingText
                       textString={item.name}
                       fontSize={16}
                       fontWeight="500"
                       fontFamily="SuisseIntl"
-                      textDecorationLine="line-through"
-                      marginLeft={10}
                     />
                   </View>
-                  <Image source={require('../../../../assets/images/star.png')} />
+                  <TouchableOpacity activeOpacity={1} onPress={starChange}>
+                    <Image source={star ? require('../../../../assets/images/star.png') : require('../../../../assets/images/starfilled.png')} />
+                  </TouchableOpacity>
+
                 </TouchableOpacity>
               </View>
-            </>)}
-
-          keyExtractor={item => item.id.toString()}
+            </>
+          )}
         />
-      )}
 
-      <View
-        style={{
-          justifyContent: 'flex-end',
-          flexDirection: 'row',
-        }}>
-        <TouchableOpacity
-          onPress={() => {
-            if (refRBSheet?.current) {
-              refRBSheet.current.open();
-              setTimeout(() => {
-                Keyboard.dismiss();
-                if (inputRef.current) {
-                  inputRef.current.focus();
-                }
-              }, 100);
-            }
-          }}>
-          <Image
-            source={require('../../../../assets/images/add.png')}
+          <View
             style={{
-              width: 70,
-              height: 70,
-              position: 'relative'
-            }}
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* Button to open modal */}
-
-      {/* Modal */}
-      <Modal
-        style={{ justifyContent: 'flex-start', margin: 0 }}
-        isVisible={showModal}
-        animationIn="fadeIn"
-        animationOut="fadeOut"
-        animationOutTiming={1000}
-        animationInTiming={400}
-        onBackdropPress={() => setShowModal(false)}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <TouchableOpacity style={styles.imageTextContainer}>
-              {/* <Icon name="Sort Ascending" size={20} style={{ marginRight: 20 }} /> */}
-              <HeadingText
-                textString={'My Day'}
-                fontSize={16}
-                fontWeight="500"
-                fontFamily="SuisseIntl"
-              />
+              alignItems: 'flex-start',
+            }}>
+            <TouchableOpacity activeOpacity={1} onPress={toggleCompletedDropdown}>
+              <Text style={{ marginVertical: 10, color: 'black' }}>
+                {completedTasks.length > 0 && `Completed ${completedTasks.length}`}
+              </Text>
             </TouchableOpacity>
-            <HeadingText
-              textString={'Add shortcut to homescreen'}
-              fontSize={16}
-              fontWeight="500"
-              fontFamily="SuisseIntl"
-              marginBottom={10}
-            />
-            <HeadingText
-              textString={'Change'}
-              fontSize={16}
-              fontWeight="500"
-              fontFamily="SuisseIntl"
-              marginBottom={10}
-            />
-            <HeadingText
-              textString={'Send a copy'}
-              fontSize={16}
-              fontWeight="500"
-              fontFamily="SuisseIntl"
-              marginBottom={10}
-            />
-            <HeadingText
-              textString={'Duplicate list'}
-              fontSize={16}
-              fontWeight="500"
-              fontFamily="SuisseIntl"
-            />
-            {/* Button to close modal */}
           </View>
-        </View>
-      </Modal>
+       
 
-      <RBSheet
-        ref={refRBSheet}
-        closeOnDragDown={false}
-        closeOnPressMask={true}
-        animationType="fade"
-        height={70}
-        customStyles={{
-          wrapper: {
-            backgroundColor: 'transparent',
-          },
-          draggableIcon: {
-            backgroundColor: '#000',
-          },
-        }}>
-        <AddingTasks
-          handleAddTask={handleAddTask}
-          task={task}
-          setTask={setTask}
-          inputRef={inputRef}
-        />
-      </RBSheet>
-    </View>
+
+        {showCompletedDropdown && (
+          <FlatList
+           style = {{marginBottom:10}}
+            data={completedTasks}
+            renderItem={({ item }) => (
+              <>
+                <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+                  <TouchableOpacity
+                    activeOpacity={1}
+                    key={item.key}
+                    style={{
+                      shadowColor: '#005F8D',
+                      backgroundColor: 'white',
+                      shadowOffset: {
+                        width: 0,
+                        height: 2,
+                      },
+                      shadowOpacity: 0.6,
+                      shadowRadius: 20,
+                      paddingVertical: 20,
+                      paddingHorizontal: 10,
+                      borderRadius: 20,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      marginBottom: 6,
+                      justifyContent: 'space-between',
+                      elevation: 4,
+                      borderWidth: 1,
+                      borderColor: '#004364',
+                      width: '100%'
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row' }}>
+                      <TouchableOpacity onPress={() => {
+                        completeTask(item.id);
+                      }}>
+                        <Image
+                          source={require('../../../../assets/images/checkedCircle.png')}
+                          style={{ height: 25, width: 25 }}
+                        />
+                      </TouchableOpacity>
+
+                      <HeadingText
+                        textString={item.name}
+                        fontSize={16}
+                        fontWeight="500"
+                        fontFamily="SuisseIntl"
+                        textDecorationLine="line-through"
+                        marginLeft={10}
+                      />
+                    </View>
+                    <Image source={require('../../../../assets/images/star.png')} />
+                  </TouchableOpacity>
+                </View>
+              </>)}
+
+            keyExtractor={item => item.id.toString()}
+          />
+        )}
+
+        
+        <RBSheet
+          ref={refRBSheet}
+          closeOnDragDown={false}
+          closeOnPressMask={true}
+          animationType="fade"
+          height={70}
+          customStyles={{
+            wrapper: {
+              backgroundColor: 'transparent',
+            },
+            draggableIcon: {
+              backgroundColor: '#000',
+            },
+          }}>
+          <AddingTasks
+            handleAddTask={handleAddTask}
+            task={task}
+            setTask={setTask}
+            inputRef={inputRef}
+          />
+        </RBSheet>
+    </ScrollView>
+    <View
+    style={{
+      position: 'absolute',
+      bottom: 7, // Adjust as needed
+      right: 7, // Adjust as needed
+    }}>
+    <TouchableOpacity
+      onPress={() => {
+        if (refRBSheet?.current) {
+          refRBSheet.current.open();
+          setTimeout(() => {
+            Keyboard.dismiss();
+            if (inputRef.current) {
+              inputRef.current.focus();
+            }
+          }, 100);
+        }
+      }}>
+      <Image
+        source={require('../../../../assets/images/add.png')}
+        style={{
+          width: 70,
+          height: 70,
+          
+        }}
+      />
+    </TouchableOpacity>
+  </View>
+  </>
   );
 };
 
