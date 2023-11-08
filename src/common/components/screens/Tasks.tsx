@@ -377,17 +377,16 @@ const Tasks = ({ navigation }: Props) => {
       right: 7, // Adjust as needed
     }}>
     <TouchableOpacity
-      onPress={() => {
-        if (refRBSheet?.current) {
-          refRBSheet.current.open();
-          setTimeout(() => {
-            Keyboard.dismiss();
-            if (inputRef.current) {
-              inputRef.current.focus();
-            }
-          }, 100);
+  onPress={() => {
+    if (refRBSheet?.current) {
+      refRBSheet.current.open();
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
         }
-      }}>
+      }, 100);
+    }
+  }}>
       <Image
         source={require('../../../../assets/images/add.png')}
         style={{
