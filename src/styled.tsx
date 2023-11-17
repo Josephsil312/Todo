@@ -46,8 +46,7 @@ export const TextInputSingleLine = styled.TextInput.attrs<TextInputProps>(
   width: 90%;
   font-weight: 600;
   font-size: 16px;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  
   padding-left: 15px;
   color: ${(props: TextInputProps) => props.color};
   font-family: 'SuisseIntl';

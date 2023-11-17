@@ -9,18 +9,16 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
-  TouchableWithoutFeedback,
   ScrollView
 } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import { HeadingText } from '../../Texts';
-import Modal from 'react-native-modal';
 import AddingTasks from './AddingTasks';
 import { RowContainer } from '../../../styled';
-// import Icon from 'react-native-vector-icons/FontAwesome';
-import { NavigationProp, ParamListBase } from '@react-navigation/native';
+import { NavigationProp, ParamListBase,useFocusEffect } from '@react-navigation/native';
+
 
 
 interface Props {
@@ -28,11 +26,13 @@ interface Props {
 }
 
 const Tasks = ({ navigation }: Props) => {
-  const [showModal, setShowModal] = useState(false);
+
   const refRBSheet = useRef<RBSheet>(null);
   const [task, setTask] = useState('');
   const [star, setStar] = useState(true)
   const inputRef = useRef<RBSheet>(null);
+  const [isRBSheetOpen, setIsRBSheetOpen] = useState(false);
+
   const [tasks, setTasks] = useState<
     {
       id: string;
@@ -57,6 +57,13 @@ const Tasks = ({ navigation }: Props) => {
     UIManager.setLayoutAnimationEnabledExperimental &&
       UIManager.setLayoutAnimationEnabledExperimental(true);
   }
+  useFocusEffect(
+    React.useCallback(() => {
+      if (isRBSheetOpen && refRBSheet?.current) {
+        refRBSheet.current.close();
+      }
+    }, [isRBSheetOpen])
+  );
   const handleAddTask = async () => {
     if (task.trim() !== '') {
       Keyboard.dismiss();
@@ -68,15 +75,17 @@ const Tasks = ({ navigation }: Props) => {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       try {
         await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
+        if (refRBSheet?.current) {
+          refRBSheet.current.close();
+          setIsRBSheetOpen(false); // Close the RBSheet after adding a task
+        }
       } catch (error) {
         console.log('Error saving tasks to AsyncStorage:', error);
       }
     }
   };
 
-  const handleModalOpen = () => {
-    setShowModal(true);
-  };
+  
 
   useEffect(() => {
     const loadTasks = async () => {
@@ -181,6 +190,7 @@ const Tasks = ({ navigation }: Props) => {
     }
   };
 
+
   const rightSwipe = () => {
     return (
       <View
@@ -207,9 +217,7 @@ const Tasks = ({ navigation }: Props) => {
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Image source={require('../../../../assets/images/chevron_left.png')} style={{ width: 30, height: 30 }} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleModalOpen}>
-            {/* <Icon name="more-vertical" size={25} color="white" /> */}
-          </TouchableOpacity>
+         
         </RowContainer>
         <HeadingText
           textString={'Tasks'}
@@ -354,13 +362,19 @@ const Tasks = ({ navigation }: Props) => {
           closeOnPressMask={true}
           animationType="fade"
           height={70}
+          // isOpen={isRBSheetOpen}
           customStyles={{
             wrapper: {
               backgroundColor: 'transparent',
+              
             },
             draggableIcon: {
               backgroundColor: '#000',
+              
             },
+            container:{
+              height:90
+            }
           }}>
           <AddingTasks
             handleAddTask={handleAddTask}
@@ -373,13 +387,14 @@ const Tasks = ({ navigation }: Props) => {
     <View
     style={{
       position: 'absolute',
-      bottom: 7, // Adjust as needed
-      right: 7, // Adjust as needed
+      bottom: 7, 
+      right: 7, 
     }}>
     <TouchableOpacity
   onPress={() => {
     if (refRBSheet?.current) {
       refRBSheet.current.open();
+      // setIsRBSheetOpen(true)
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
@@ -391,8 +406,7 @@ const Tasks = ({ navigation }: Props) => {
         source={require('../../../../assets/images/add.png')}
         style={{
           width: 70,
-          height: 70,
-          
+          height: 70,  
         }}
       />
     </TouchableOpacity>
