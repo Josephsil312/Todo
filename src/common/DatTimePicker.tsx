@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { View, TouchableOpacity, Text } from 'react-native';
+import React  from 'react';
+import { View} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-
 
 const DatTimePicker =(props: {
   setDate: (arg0: any) => any;
@@ -11,15 +10,11 @@ const DatTimePicker =(props: {
   showDatePicker: (() => void) | undefined;
   hideDatePicker: (() => void) | undefined;
   handleDateChange: ((event: any, selectedDate: any) => void);
+  isToday:((selectedDate: any) => void);
   formatDateToDayOfWeek: ((selectedDate: any) => void);
-}) => {
-    
+}) => { 
   return (
     <View>
-     <TouchableOpacity onPress={props.showDatePicker}>
-      <Text>Show Date Picker</Text>
-    </TouchableOpacity>
-
     {props.showPicker && (
       <DateTimePicker
         value={props.date}
@@ -28,7 +23,6 @@ const DatTimePicker =(props: {
         onChange={props.handleDateChange}
       />
     )}
-   
     {/* <Text>Selected Day: {formatDateToDayOfWeek(date)}</Text> */}
     </View>
   )

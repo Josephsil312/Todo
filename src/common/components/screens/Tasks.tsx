@@ -207,6 +207,7 @@ const Tasks = ({ navigation }: Props) => {
       </View>
     );
   };
+  
   const starChange = () => {
     setStar((prev) => !prev)
   }
@@ -373,7 +374,7 @@ const Tasks = ({ navigation }: Props) => {
               
             },
             container:{
-              height:90
+              height:80
             }
           }}>
           <AddingTasks
