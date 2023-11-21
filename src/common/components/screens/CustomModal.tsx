@@ -1,7 +1,7 @@
-import { StyleSheet, Text, View, Modal, Alert, Pressable, TouchableWithoutFeedback, Image, TouchableOpacity } from 'react-native'
-import React, { useState,useEffect } from 'react'
+import { StyleSheet, View, Modal, TouchableWithoutFeedback, Image, TouchableOpacity } from 'react-native'
+import React, { useState, useEffect } from 'react'
 import { HeadingText } from '../../Texts';
-import DatTimePicker from '../../DatTimePicker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { BlurView } from "@react-native-community/blur";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 const CustomModal = (props: {
@@ -15,31 +15,27 @@ const CustomModal = (props: {
     const [date, setDate] = useState(new Date());
     const [showPicker, setShowPicker] = useState(false);
     const [selectedText, setSelectedText] = useState('Set due date');
-    
+
     const showDatePicker = () => {
         setShowPicker(true);
+        console.log('showpicker')
     };
 
     const hideDatePicker = () => {
         setShowPicker(false);
+        console.log('hidepicker')
     };
+
+
 
     const handleDateChange = (event: { type: string; }, selectedDate: any) => {
         if (event.type === 'set') {
+            // Update state or perform actions
             setDate(selectedDate || date);
+        } else if (event.type === 'dismissed') {
+            // Handle dismissal, e.g., hide the picker
             hideDatePicker();
-            if (isToday(selectedDate)) {
-                setSelectedText('Due today');
-                props.setIsDueToday(true); // Call the callback function
-            } else if (isTomorrow(selectedDate)){
-                setSelectedText('Due tomorrow');
-                props.setIsDueToday(false); // Call the callback function
-            } else{
-                setSelectedText('Set due date');
-                props.setIsDueToday(false);
-            }
-        } else {
-            hideDatePicker();
+            
         }
     };
 
@@ -58,9 +54,9 @@ const CustomModal = (props: {
 
     const isToday = (selectedDate: Date) => {
         const todaydate = selectedDate.getDate();
-        console.log('clicked today',todaydate)
-        props.setIsDueToday(true);
-        props.setModalVisible(false);
+        console.log('clicked today', todaydate)
+        // props.setIsDueToday(true);
+        // props.setModalVisible(false);
         toggleFeature()
         return (
             selectedDate.getDate() === today.getDate() &&
@@ -71,7 +67,7 @@ const CustomModal = (props: {
 
     const isTomorrow = (selectedDate: Date) => {
         selectedDate = tomorrow
-        console.log('clickec tomorrow',selectedDate)
+        console.log('clickec tomorrow', selectedDate)
         return (
             selectedDate.getDate() === tomorrow.getDate() &&
             selectedDate.getMonth() === tomorrow.getMonth() &&
@@ -81,32 +77,32 @@ const CustomModal = (props: {
 
     useEffect(() => {
         loadIsDueTodayStatus();
-      }, [])
-    
-      const loadIsDueTodayStatus = async () => {
-        try {
-          const storedValue = await AsyncStorage.getItem('isDueToday');
-          if (storedValue !== null) {
-            props.setIsDueToday(JSON.parse(storedValue))
-          }
-        } catch (error) {
-          console.error('Error loading isduetoday', error)
-        }
-      }
-      
-      const saveIsDueTodayStatus = async (value: any) => {
-        try {
-          await AsyncStorage.setItem('isDueToday', JSON.stringify(value))
-        } catch (error) {
-          console.error('Error saving isduetoday', error)
-        }
-      }
+    }, [])
 
-      const toggleFeature = () => {
+    const loadIsDueTodayStatus = async () => {
+        try {
+            const storedValue = await AsyncStorage.getItem('isDueToday');
+            if (storedValue !== null) {
+                props.setIsDueToday(JSON.parse(storedValue))
+            }
+        } catch (error) {
+            console.error('Error loading isduetoday', error)
+        }
+    }
+
+    const saveIsDueTodayStatus = async (value: any) => {
+        try {
+            await AsyncStorage.setItem('isDueToday', JSON.stringify(value))
+        } catch (error) {
+            console.error('Error saving isduetoday', error)
+        }
+    }
+
+    const toggleFeature = () => {
         const newValue = !(props.isDueToday);
         props.setIsDueToday(newValue)
         saveIsDueTodayStatus(newValue)
-      }
+    }
 
     return (
         <View>
@@ -116,6 +112,7 @@ const CustomModal = (props: {
                 visible={props.modalVisible}
                 onRequestClose={() => {
                     props.setModalVisible(false);
+                    
                 }}>
                 <TouchableWithoutFeedback onPress={props.closeModal}>
                     <View style={styles.centeredView}>
@@ -133,7 +130,7 @@ const CustomModal = (props: {
                                     />
                                 </View>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => isTomorrow(date)}>
+                            <TouchableOpacity onPress={() => {}}>
                                 <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
                                     <Image source={require('../../../../assets/images/tomorrow.png')} style={{ marginVertical: 10 }} />
                                     <HeadingText
@@ -162,16 +159,16 @@ const CustomModal = (props: {
                         </View>
                     </View>
                 </TouchableWithoutFeedback>
-                {showPicker &&
-                    <BlurView
-                        style={styles.absolute}
-                        blurType="dark"
-                        blurAmount={2}
-                        reducedTransparencyFallbackColor="white"
-                    />
-                }
-            </Modal>
-            <DatTimePicker formatDateToDayOfWeek={formatDateToDayOfWeek} handleDateChange={handleDateChange} hideDatePicker={hideDatePicker} date={date} setDate={setDate} showPicker={showPicker} setShowPicker={setShowPicker} showDatePicker={showDatePicker} isToday={isToday}/>
+                
+            </Modal> 
+            {showPicker &&
+                <DateTimePicker
+                    value={date}
+                    mode="datetime" // Set the mode to 'date', 'time', or 'datetime'
+                    display="default"
+                    onChange={handleDateChange} />
+            }
+                
         </View>
     )
 }
