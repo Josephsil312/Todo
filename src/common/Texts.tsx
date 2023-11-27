@@ -1,6 +1,6 @@
 import React from 'react';
-import {HeadingTextProps} from '../types';
-import {HeadingTextStyle} from '../styled';
+import { HeadingTextProps } from '../types';
+import { HeadingTextStyle } from '../styled';
 
 export const HeadingText: React.FC<HeadingTextProps> = ({
   textString,
@@ -33,6 +33,11 @@ export const HeadingText: React.FC<HeadingTextProps> = ({
   marginVertical,
   textDecorationLine,
   justifyContent,
+  position,
+  zIndex,
+  left,
+  bottom,
+  right
 }) => {
   return (
     <HeadingTextStyle
@@ -62,6 +67,11 @@ export const HeadingText: React.FC<HeadingTextProps> = ({
       flexDirection={flexDirection}
       alignSelf={alignSelf}
       width={width}
+      position={position}
+      zIndex={zIndex}
+      left={left}
+      bottom={bottom}
+      right={right}
       borderRadius={borderRadius}
       textDecorationLine={textDecorationLine}
       marginVertical={marginVertical}

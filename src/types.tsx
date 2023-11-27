@@ -1,5 +1,5 @@
 export interface HeadingTextProps {
-  textString?: string;
+  textString?: string | number | boolean;
   flexDirection?: string;
   marginBottom?: number;
   marginTop?: number;
@@ -33,6 +33,11 @@ export interface HeadingTextProps {
   marginVertical?: number;
   textDecorationLine?: string;
   justifyContent?: string;
+  position?:string;
+  zIndex?:number;
+  left?:number
+  right?:number;
+  bottom?:number;
 }
 
 export interface TextInputProps {

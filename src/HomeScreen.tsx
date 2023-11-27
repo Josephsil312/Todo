@@ -1,7 +1,7 @@
-import {StyleSheet, View, TouchableOpacity} from 'react-native';
+import {StyleSheet, View, TouchableOpacity,Image} from 'react-native';
 import {HeadingText} from './common/Texts';
 import React from 'react';
-import Icon from 'react-native-vector-icons/Feather';
+
 import {NavigationProp, ParamListBase} from '@react-navigation/native';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface Props {
@@ -13,7 +13,7 @@ const HomeScreen = ({navigation}: Props) => {
       <TouchableOpacity
         style={styles.imageTextContainer}
         onPress={() => navigation.navigate('MyDay')}>
-        <Icon name="sun" size={25} style={{marginRight: 20}} />
+        <Image source={require('../assets/images/myday.png')} style = {{marginRight:20}}/>
         <HeadingText
           textString={'My Day'}
           fontSize={16}
@@ -24,7 +24,7 @@ const HomeScreen = ({navigation}: Props) => {
       <TouchableOpacity
         style={styles.imageTextContainer}
         onPress={() => navigation.navigate('Important')}>
-        <Icon name="star" size={25} style={{marginRight: 20}} color="red" />
+        <Image source={require('../assets/images/importantt.png')} style = {{marginRight:20}}/>
         <HeadingText
           textString={'Important'}
           fontSize={16}
@@ -35,12 +35,7 @@ const HomeScreen = ({navigation}: Props) => {
       <TouchableOpacity
         style={styles.imageTextContainer}
         onPress={() => navigation.navigate('Planned')}>
-        <Icon
-          name="file-text"
-          size={25}
-          style={{marginRight: 20}}
-          color="green"
-        />
+        <Image source={require('../assets/images/planning.png')} style = {{marginRight:20}}/>
         <HeadingText
           textString={'Planned'}
           fontSize={16}
@@ -51,12 +46,7 @@ const HomeScreen = ({navigation}: Props) => {
       <TouchableOpacity
         style={styles.imageTextContainer}
         onPress={() => navigation.navigate('Tasks')}>
-        <Icon
-          name="check-square"
-          size={25}
-          style={{marginRight: 20}}
-          color="grey"
-        />
+        <Image source={require('../assets/images/home.png')} style = {{marginRight:20}}/>
         <HeadingText
           textString={'Tasks'}
           fontSize={16}
