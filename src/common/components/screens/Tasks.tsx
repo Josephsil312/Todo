@@ -3,13 +3,15 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
-  Keyboard,
+  Pressable,
   Text,
   Image,
   LayoutAnimation,
   Platform,
   UIManager,
-  ScrollView
+  ScrollView,
+  Animated,
+  Easing
 } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,75 +19,69 @@ import RBSheet from 'react-native-raw-bottom-sheet';
 import { HeadingText } from '../../Texts';
 import AddingTasks from './AddingTasks';
 import { RowContainer } from '../../../styled';
-import { NavigationProp, ParamListBase,useFocusEffect } from '@react-navigation/native';
-
-
+import { NavigationProp, ParamListBase, useFocusEffect } from '@react-navigation/native';
 
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
 
 const Tasks = ({ navigation }: Props) => {
-
+  const textInputRef = useRef(null);
+  const scrollViewRef = useRef(null);
   const refRBSheet = useRef<RBSheet>(null);
   const [task, setTask] = useState('');
-  const [star, setStar] = useState(true)
-  const inputRef = useRef<RBSheet>(null);
+  const [star, setStar] = useState<Record<string, boolean>>({});
   const [isRBSheetOpen, setIsRBSheetOpen] = useState(false);
-
+  const [rotationAnimation] = useState(new Animated.Value(0));
+  const scrollY = useRef(new Animated.Value(0)).current;
   const [tasks, setTasks] = useState<
     {
       id: string;
       name: string;
-      position: number;
-      key: string;
     }[]
   >([]);
   const [completedTasks, setCompletedTasks] = useState<
     {
       id: string;
       name: string;
-      position: number;
-      key: string;
     }[]
   >([]);
 
   const [showCompletedDropdown, setShowCompletedDropdown] = useState(false);
-  const [toggleCheckBox, setToggleCheckBox] = useState(false)
 
   if (Platform.OS === 'android') {
     UIManager.setLayoutAnimationEnabledExperimental &&
       UIManager.setLayoutAnimationEnabledExperimental(true);
   }
-  useFocusEffect(
-    React.useCallback(() => {
-      if (isRBSheetOpen && refRBSheet?.current) {
-        refRBSheet.current.close();
-      }
-    }, [isRBSheetOpen])
-  );
+
   const handleAddTask = async () => {
     if (task.trim() !== '') {
-      Keyboard.dismiss();
       const taskId = Date.now().toString();
       const newTask = { id: taskId, name: task };
       const updatedTasks = [...tasks, newTask];
-      setTasks(updatedTasks);
-      setTask('');
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+      // Set state and AsyncStorage first
       try {
         await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
-        if (refRBSheet?.current) {
-          refRBSheet.current.close();
-          setIsRBSheetOpen(false); // Close the RBSheet after adding a task
-        }
+        setTasks(updatedTasks);
+        setTask('');
+        LayoutAnimation.configureNext({
+          duration: 500,
+          create:
+          {
+            type: LayoutAnimation.Types.easeInEaseOut,
+            property: LayoutAnimation.Properties.opacity,
+          },
+          update:
+          {
+            type: LayoutAnimation.Types.easeInEaseOut,
+          }
+        });
       } catch (error) {
-        console.log('Error saving tasks to AsyncStorage:', error);
+        console.error('Error saving tasks to AsyncStorage:', error);
       }
     }
   };
-
-  
 
   useEffect(() => {
     const loadTasks = async () => {
@@ -113,7 +109,18 @@ const Tasks = ({ navigation }: Props) => {
       if (completedTask) {
         const updatedTasks = tasks.filter(task => task.id !== taskId);
         const updatedCompletedTasks = [...completedTasks, completedTask];
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        LayoutAnimation.configureNext({
+          duration: 500,
+          create:
+          {
+            type: LayoutAnimation.Types.easeInEaseOut,
+            property: LayoutAnimation.Properties.opacity,
+          },
+          update:
+          {
+            type: LayoutAnimation.Types.easeInEaseOut,
+          }
+        });
         setTasks(updatedTasks);
         setCompletedTasks(updatedCompletedTasks);
         await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
@@ -143,6 +150,7 @@ const Tasks = ({ navigation }: Props) => {
 
     loadCompletedTasks();
   }, []);
+
   useEffect(() => {
     const saveCompletedTasks = async () => {
       try {
@@ -154,13 +162,24 @@ const Tasks = ({ navigation }: Props) => {
         console.log('Error saving completed tasks to AsyncStorage:', error);
       }
     };
-
     saveCompletedTasks();
   }, [completedTasks]);
 
   const toggleCompletedDropdown = () => {
+   
+    LayoutAnimation.configureNext({
+      duration: 500,
+      create:
+      {
+        type: LayoutAnimation.Types.easeInEaseOut,
+        property: LayoutAnimation.Properties.opacity,
+      },
+      update:
+      {
+        type: LayoutAnimation.Types.easeInEaseOut,
+      }
+    });
     setShowCompletedDropdown(!showCompletedDropdown);
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
   };
 
   const completeTask = async (taskId: string) => {
@@ -171,7 +190,18 @@ const Tasks = ({ navigation }: Props) => {
       const completedTask = completedTasks[completedTaskIndex];
       const updatedCompletedTasks = [...completedTasks];
       updatedCompletedTasks.splice(completedTaskIndex, 1);
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      LayoutAnimation.configureNext({
+        duration: 500,
+        create:
+        {
+          type: LayoutAnimation.Types.easeInEaseOut,
+          property: LayoutAnimation.Properties.opacity,
+        },
+        update:
+        {
+          type: LayoutAnimation.Types.easeInEaseOut,
+        }
+      });
       setCompletedTasks(updatedCompletedTasks);
 
       setTasks(prevTasks => [...prevTasks, completedTask]);
@@ -190,79 +220,91 @@ const Tasks = ({ navigation }: Props) => {
     }
   };
 
-
-  const rightSwipe = () => {
-    return (
-      <View
-        style={{
-          backgroundColor: 'red',
-          width: '80%',
-          borderRadius: 5,
-          height: 62,
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}>
-        <TouchableOpacity />
-        <Text>Delete</Text>
-      </View>
-    );
+  const starChange = (id: string) => {
+    setStar((prevStars) => {
+      const updatedStars = { ...prevStars, [id]: !prevStars[id] };
+      return updatedStars;
+    });
   };
-  
-  const starChange = () => {
-    setStar((prev) => !prev)
-  }
+
+  useEffect(() => {
+    Animated.timing(rotationAnimation, {
+      toValue: showCompletedDropdown ? 1 : 0,
+      duration: 300,
+      easing: Easing.inOut(Easing.ease), // You can customize the easing function
+      useNativeDriver: false, // 'false' because we're animating a style property that's not supported by the native driver
+    }).start();
+  }, [showCompletedDropdown, rotationAnimation]);
+
+  const animatedStyle = {
+    transform: [
+      {
+        rotate: rotationAnimation.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['0deg', '90deg'],
+        }),
+      },
+    ],
+  };
+
+  // const headerHeight = scrollY.interpolate({
+  //   inputRange: [20, 100], // adjust the range based on when you want the animation to happen
+  //   outputRange: [35, 15], // adjust the height values
+  //   extrapolate: 'clamp',
+  // });
+
+  // const headerTranslateY = scrollY.interpolate({
+  //   inputRange: [0, 100], // adjust the range based on when you want the animation to happen
+  //   outputRange: [0, -15], // adjust the translateY values
+  //   extrapolate: 'clamp',
+  // });
+
   return (
     <>
-    <ScrollView style={styles.taskContainer}>
+      <ScrollView style={styles.taskContainer} keyboardShouldPersistTaps='always' onScroll={Animated.event(
+        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+        { useNativeDriver: false } // make sure to set this to false when using contentOffset
+      )}
+      scrollEventThrottle={16} ref={scrollViewRef}>
         <RowContainer>
           <TouchableOpacity onPress={() => navigation.goBack()}>
+
             <Image source={require('../../../../assets/images/chevron_left.png')} style={{ width: 30, height: 30 }} />
+
           </TouchableOpacity>
-         
+
         </RowContainer>
+        {/* <Animated.Text
+        style={[
+          {
+            fontSize: headerHeight,
+            transform: [{ translateY: headerTranslateY }],
+          },
+        ]}
+      > */}
         <HeadingText
           textString={'Tasks'}
-          fontSize={25}
+          // fontSize={25}
           fontWeight="700"
           fontFamily="SuisseIntl"
-          color="black"
+          color="white"
         />
-
+{/* </Animated.Text> */}
         <FlatList
           style={{ marginTop: 10 }}
           data={tasks.filter(task => !completedTasks.some(c => c.id === task.id))}
-          keyExtractor={item => item.key}
+          keyExtractor={item => item.id}
           renderItem={({ item }) => (
             <>
               <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
                 <TouchableOpacity
                   activeOpacity={1}
-                  style={{
-                    elevation: 4,
-                    paddingVertical: 20,
-                    paddingHorizontal: 10,
-                    borderRadius: 20,
-                    alignItems: 'center',
-                    marginBottom: 6,
-                    justifyContent: 'space-between',
-                    flexDirection: 'row',
-                    shadowColor: '#005F8D',
-                    backgroundColor: 'white',
-                    shadowOffset: {
-                      width: 0,
-                      height: 2,
-                    },
-                    shadowOpacity: 0.6,
-                    shadowRadius: 10,
-                    borderWidth: 1,
-                    borderColor: '#004364',
-                    width: '100%'
-                  }}
+                  style={styles.incompletetasks}
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
                     <TouchableOpacity onPress={() => handleCompleteTask(item.id)}>
                       <Image
-                        source={require('../../../../assets/images/emptyCircle.png')}
+                        source={require('../../../../assets/images/empty_circlee.png')}
                         style={styles.image}
                       />
                     </TouchableOpacity>
@@ -273,9 +315,9 @@ const Tasks = ({ navigation }: Props) => {
                       fontFamily="SuisseIntl"
                     />
                   </View>
-                  <TouchableOpacity activeOpacity={1} onPress={starChange}>
-                    <Image source={star ? require('../../../../assets/images/star.png') : require('../../../../assets/images/starfilled.png')} />
-                  </TouchableOpacity>
+                  <Pressable key={item.id} onPress={() => starChange(item.id)}>
+                    <Image source={star[item.id] ? require('../../../../assets/images/starfilled.png') : require('../../../../assets/images/star.png')} />
+                  </Pressable>
 
                 </TouchableOpacity>
               </View>
@@ -283,50 +325,35 @@ const Tasks = ({ navigation }: Props) => {
           )}
         />
 
-          <View
-            style={{
-              alignItems: 'flex-start',
-            }}>
-            <TouchableOpacity activeOpacity={1} onPress={toggleCompletedDropdown}>
-              <Text style={{ marginVertical: 10, color: 'black' }}>
-                {completedTasks.length > 0 && `Completed ${completedTasks.length}`}
-              </Text>
-            </TouchableOpacity>
-          </View>
-       
+        {completedTasks.length > 0 &&
+          <Pressable onPress={toggleCompletedDropdown} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 7 }}>
+            <Animated.View style={[animatedStyle]}>
+              <Image source={require('../../../../assets/images/completed.png')}
+              />
+            </Animated.View>
+            <HeadingText
+              textString={`Completed ${completedTasks.length}`}
+              fontSize={16}
+              fontWeight="500"
+              fontFamily="SuisseIntl"
+              color='white'
+            ></HeadingText>
+          </Pressable>
+        }
+
 
 
         {showCompletedDropdown && (
           <FlatList
-           style = {{marginBottom:10}}
+            style={{ marginBottom: 10 }}
             data={completedTasks}
             renderItem={({ item }) => (
               <>
                 <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
                   <TouchableOpacity
                     activeOpacity={1}
-                    key={item.key}
-                    style={{
-                      shadowColor: '#005F8D',
-                      backgroundColor: 'white',
-                      shadowOffset: {
-                        width: 0,
-                        height: 2,
-                      },
-                      shadowOpacity: 0.6,
-                      shadowRadius: 20,
-                      paddingVertical: 20,
-                      paddingHorizontal: 10,
-                      borderRadius: 20,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      marginBottom: 6,
-                      justifyContent: 'space-between',
-                      elevation: 4,
-                      borderWidth: 1,
-                      borderColor: '#004364',
-                      width: '100%'
-                    }}
+                    key={item.id}
+                    style={styles.completedtasks}
                   >
                     <View style={{ flexDirection: 'row' }}>
                       <TouchableOpacity onPress={() => {
@@ -345,6 +372,7 @@ const Tasks = ({ navigation }: Props) => {
                         fontFamily="SuisseIntl"
                         textDecorationLine="line-through"
                         marginLeft={10}
+
                       />
                     </View>
                     <Image source={require('../../../../assets/images/star.png')} />
@@ -356,63 +384,63 @@ const Tasks = ({ navigation }: Props) => {
           />
         )}
 
-        
+
         <RBSheet
           ref={refRBSheet}
           closeOnDragDown={false}
           closeOnPressMask={true}
           animationType="fade"
           height={70}
-          // isOpen={isRBSheetOpen}
+          isOpen={isRBSheetOpen}
+
           customStyles={{
             wrapper: {
               backgroundColor: 'transparent',
-              
             },
             draggableIcon: {
               backgroundColor: '#000',
-              
+
             },
-            container:{
-              height:80
+            container: {
+              height: 80,
+
             }
           }}>
           <AddingTasks
             handleAddTask={handleAddTask}
             task={task}
             setTask={setTask}
-            inputRef={inputRef}
+            inputRef={textInputRef}
           />
         </RBSheet>
-    </ScrollView>
-    <View
-    style={{
-      position: 'absolute',
-      bottom: 7, 
-      right: 7, 
-    }}>
-    <TouchableOpacity
-  onPress={() => {
-    if (refRBSheet?.current) {
-      refRBSheet.current.open();
-      // setIsRBSheetOpen(true)
-      setTimeout(() => {
-        if (inputRef.current) {
-          inputRef.current.focus();
-        }
-      }, 100);
-    }
-  }}>
-      <Image
-        source={require('../../../../assets/images/add.png')}
+      </ScrollView>
+
+      <View
         style={{
-          width: 70,
-          height: 70,  
-        }}
-      />
-    </TouchableOpacity>
-  </View>
-  </>
+          position: 'absolute',
+          bottom: 7,
+          right: 7,
+        }}>
+        <Pressable
+          onPress={() => {
+            if (refRBSheet?.current) {
+              refRBSheet.current.open();
+              setIsRBSheetOpen(true)
+            }
+          }}>
+          <Image
+            source={require('../../../../assets/images/addd.png')}
+            style={{
+              width: 70,
+              height: 70,
+            }}
+
+          />
+          {/* <TextInput placeholder='text'/> */}
+        </Pressable>
+      </View>
+
+    </>
   );
 };
 
@@ -423,8 +451,8 @@ const styles = StyleSheet.create({
     marginRight: 13,
   },
   taskContainer: {
-    flex: 1,
-    backgroundColor: '#F0F8FF',
+    flexGrow: 1,
+    backgroundColor: '#8B80F9',
     padding: 10,
   },
   modalContainer: {
@@ -445,6 +473,44 @@ const styles = StyleSheet.create({
     height: 75,
     width: 150,
   },
+  incompletetasks: {
+    elevation: 6,
+    paddingVertical: 20,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    alignItems: 'center',
+    marginBottom: 6,
+    justifyContent: 'space-between',
+    flexDirection: 'row',
+    shadowColor: '#005F8D',
+    backgroundColor: 'white',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.6,
+    shadowRadius: 20,
+    width: '100%'
+  },
+  completedtasks: {
+    shadowColor: '#005F8D',
+    backgroundColor: 'white',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.6,
+    shadowRadius: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+    justifyContent: 'space-between',
+    elevation: 6,
+    width: '100%'
+  }
 });
 export default Tasks;
 
