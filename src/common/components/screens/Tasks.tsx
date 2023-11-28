@@ -266,14 +266,14 @@ const Tasks = ({ navigation }: Props) => {
         { useNativeDriver: false } // make sure to set this to false when using contentOffset
       )}
       scrollEventThrottle={16} ref={scrollViewRef}>
-        <RowContainer>
+        {/* <RowContainer>
           <TouchableOpacity onPress={() => navigation.goBack()}>
 
             <Image source={require('../../../../assets/images/chevron_left.png')} style={{ width: 30, height: 30 }} />
 
           </TouchableOpacity>
 
-        </RowContainer>
+        </RowContainer> */}
         {/* <Animated.Text
         style={[
           {
@@ -282,16 +282,9 @@ const Tasks = ({ navigation }: Props) => {
           },
         ]}
       > */}
-        <HeadingText
-          textString={'Tasks'}
-          // fontSize={25}
-          fontWeight="700"
-          fontFamily="SuisseIntl"
-          color="white"
-        />
+        
 {/* </Animated.Text> */}
         <FlatList
-          style={{ marginTop: 10 }}
           data={tasks.filter(task => !completedTasks.some(c => c.id === task.id))}
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
@@ -329,7 +322,7 @@ const Tasks = ({ navigation }: Props) => {
           <Pressable onPress={toggleCompletedDropdown} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 7 }}>
             <Animated.View style={[animatedStyle]}>
               <Image source={require('../../../../assets/images/completed.png')}
-              />
+             />
             </Animated.View>
             <HeadingText
               textString={`Completed ${completedTasks.length}`}
