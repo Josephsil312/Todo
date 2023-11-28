@@ -29,7 +29,7 @@ export const HeadingTextStyle = styled.Text<HeadingTextProps>`
     props.fontFamily || 'SuisseIntl'};
   text-align: ${(props: {textAlign: any}) => props.textAlign || 'left'};
   font-style: ${(props: {fontStyle: any}) => props.fontStyle || 'normal'};
-  text-decoration-line: ${({textDecorationLine}) => textDecorationLine || ''};
+  text-decoration-line: ${({textDecorationLine}) => (textDecorationLine ? textDecorationLine : 'none')};
 `;
 
 export const RowContainer = styled.View`

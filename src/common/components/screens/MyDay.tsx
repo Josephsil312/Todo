@@ -7,12 +7,6 @@ interface Props {
 const MyDay = ({navigation}: Props) => {
   return (
     <View>
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Image
-          source={require('./../../../../assets/images/back-arrow.png')}
-          style={styles.image}
-        />
-      </TouchableOpacity>
       <Text>MyDay</Text>
     </View>
   );
