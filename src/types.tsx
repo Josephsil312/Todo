@@ -38,6 +38,7 @@ export interface HeadingTextProps {
   left?:number
   right?:number;
   bottom?:number;
+  style?:object;
 }
 
 export interface TextInputProps {

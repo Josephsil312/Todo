@@ -4,12 +4,16 @@ import Tasks from '../common/components/screens/Tasks';
 import Planned from '../common/components/screens/Planned';
 import Important from '../common/components/screens/Important';
 import MyDay from '../common/components/screens/MyDay';
-import {NavigationContainer} from '@react-navigation/native';
+import {NavigationContainer, useRoute} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-
+import AddNote from '../common/components/screens/AddNote';
 import React from 'react';
 const Stack = createNativeStackNavigator();
-function HomeScreenNavigator(): JSX.Element {
+function HomeScreenNavigator(props:any): JSX.Element {
+  type RouteParams = {
+    selectedItem?: string; // Adjust the type as needed
+    navigation?: any;
+  };
   return (
     <NavigationContainer>
       <View style={{flex: 1}}>
@@ -102,6 +106,31 @@ function HomeScreenNavigator(): JSX.Element {
               },
               headerStyle: {
                 backgroundColor: '#56101A', 
+              },
+              headerTintColor: '#fff',
+              headerLeft: () => (
+                <Pressable
+                  onPress={() => {
+                    navigation.goBack();
+                  }}
+                >
+                  <Image source={require('../../assets/images/chevron_left.png')} style={{ width: 23, height: 23,marginRight:20 }} />
+                </Pressable>
+              ),
+            })}
+          />
+           <Stack.Screen
+            name="Add Note"
+            component={AddNote}
+            options={({ route, navigation }: { route: { params?: RouteParams }; navigation: any }) => ({
+              headerTitle:  'Add Note',
+              headerTitleStyle: {
+                fontWeight: '200',
+                fontSize: 25,
+                color:'black'
+              },
+              headerStyle: {
+                backgroundColor: '#fff', 
               },
               headerTintColor: '#fff',
               headerLeft: () => (

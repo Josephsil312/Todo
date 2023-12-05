@@ -1,7 +1,7 @@
 import {StyleSheet, View, TouchableOpacity,Image} from 'react-native';
 import {HeadingText} from './common/Texts';
 import React from 'react';
-
+import Iconfont from 'react-native-vector-icons/Fontisto';
 import {NavigationProp, ParamListBase} from '@react-navigation/native';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface Props {
@@ -13,7 +13,7 @@ const HomeScreen = ({navigation}: Props) => {
       <TouchableOpacity
         style={styles.imageTextContainer}
         onPress={() => navigation.navigate('MyDay')}>
-        <Image source={require('../assets/images/myday.png')} style = {{marginRight:20}}/>
+         <Iconfont name="day-sunny" size={22} color="grey" style={{marginRight:20}}/>
         <HeadingText
           textString={'My Day'}
           fontSize={16}
