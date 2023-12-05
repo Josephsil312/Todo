@@ -33,7 +33,7 @@ function HomeScreenNavigator(props:any): JSX.Element {
                 fontSize: 25
               },
               headerStyle: {
-                backgroundColor: '#8B80F9', 
+                backgroundColor: '#7568f8', 
               },
               headerTintColor: '#fff',
               headerLeft: () => (
