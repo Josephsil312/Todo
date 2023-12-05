@@ -3,6 +3,9 @@ import {HeadingText} from './common/Texts';
 import React from 'react';
 import Iconfont from 'react-native-vector-icons/Fontisto';
 import {NavigationProp, ParamListBase} from '@react-navigation/native';
+import Star from 'react-native-vector-icons/Octicons';
+import Task from 'react-native-vector-icons/FontAwesome'
+import Calendar from 'react-native-vector-icons/MaterialCommunityIcons'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface Props {
   navigation: NavigationProp<ParamListBase>;
@@ -24,7 +27,7 @@ const HomeScreen = ({navigation}: Props) => {
       <TouchableOpacity
         style={styles.imageTextContainer}
         onPress={() => navigation.navigate('Important')}>
-        <Image source={require('../assets/images/importantt.png')} style = {{marginRight:20}}/>
+        <Star name="star" size={22} color="red" style={{marginRight:20}}/>
         <HeadingText
           textString={'Important'}
           fontSize={16}
@@ -35,7 +38,7 @@ const HomeScreen = ({navigation}: Props) => {
       <TouchableOpacity
         style={styles.imageTextContainer}
         onPress={() => navigation.navigate('Planned')}>
-        <Image source={require('../assets/images/planning.png')} style = {{marginRight:20}}/>
+        <Calendar name="calendar-today" size={22} color="#42EA19" style={{marginRight:20}}/>
         <HeadingText
           textString={'Planned'}
           fontSize={16}
@@ -46,7 +49,7 @@ const HomeScreen = ({navigation}: Props) => {
       <TouchableOpacity
         style={styles.imageTextContainer}
         onPress={() => navigation.navigate('Tasks')}>
-        <Image source={require('../assets/images/home.png')} style = {{marginRight:20}}/>
+        <Task  name="calendar-check-o" size={20} color="#7568f8" style={{marginRight:20}}/>
         <HeadingText
           textString={'Tasks'}
           fontSize={16}

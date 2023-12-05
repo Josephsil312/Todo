@@ -23,7 +23,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import Iconn from 'react-native-vector-icons/EvilIcons'
 import Iconfromentypo from 'react-native-vector-icons/Entypo'
 import Iconchev from 'react-native-vector-icons/Entypo'
-
+import Plusicon from 'react-native-vector-icons/AntDesign'
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
@@ -314,11 +314,12 @@ const Tasks = ({ navigation }: Props) => {
                       marginLeft={10}
                     />
                   </View>
+                  
                   <Pressable key={item.id} onPress={() => starChange(item.id)}>
-                    {star[item.id] ? <Iconn name="star" size={25} color="grey" /> 
-                    : <Iconfromentypo name="star" size={22} color="grey" style = {{color:'#f5eb05'}}/>
+                    {star[item.id] ?  <Iconfromentypo name="star" size={22} color="grey" style = {{color:'#f5eb05'}}/>
+                    : <Iconn name="star" size={25} color="grey" />
                     }
-                    {/* <Image source={star[item.id] ? require('../../../../assets/images/starfilled.png') : require('../../../../assets/images/star.png')} /> */}
+                
                   </Pressable>
 
                 </Pressable>
@@ -452,14 +453,8 @@ const Tasks = ({ navigation }: Props) => {
               setIsRBSheetOpen(true)
             }
           }}>
-          <Image
-            source={require('../../../../assets/images/addd.png')}
-            style={{
-              width: 70,
-              height: 70,
-            }}
-
-          />
+         <Plusicon name="pluscircle" size={45} color="#cec9fc" style = {{shadowColor: '#444167',elevation: 6, shadowOpacity: 0.6,
+    shadowRadius: 20}}/>
         </Pressable>
       </View>
 
@@ -475,7 +470,7 @@ const styles = StyleSheet.create({
   },
   taskContainer: {
     flexGrow: 1,
-    backgroundColor: '#8B80F9',
+    backgroundColor: '#7568f8',
     padding: 10,
   },
   modalContainer: {
