@@ -37,7 +37,8 @@ export const HeadingText: React.FC<HeadingTextProps> = ({
   zIndex,
   left,
   bottom,
-  right
+  right,
+  style
 }) => {
   return (
     <HeadingTextStyle
@@ -76,6 +77,7 @@ export const HeadingText: React.FC<HeadingTextProps> = ({
       textDecorationLine={textDecorationLine}
       marginVertical={marginVertical}
       justifyContent={justifyContent}
+      style={style}
       visible={visible}>
       {textString}
     </HeadingTextStyle>

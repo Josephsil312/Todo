@@ -18,12 +18,12 @@ const CustomModal = (props: {
 
     const showDatePicker = () => {
         setShowPicker(true);
-        console.log('showpicker')
+      
     };
 
     const hideDatePicker = () => {
         setShowPicker(false);
-        console.log('hidepicker')
+       
     };
 
 

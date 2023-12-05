@@ -4,7 +4,6 @@ import {
   StyleSheet,
   FlatList,
   Pressable,
-  Text,
   Image,
   LayoutAnimation,
   Platform,
@@ -18,8 +17,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import { HeadingText } from '../../Texts';
 import AddingTasks from './AddingTasks';
-import { RowContainer } from '../../../styled';
-import { NavigationProp, ParamListBase, useFocusEffect } from '@react-navigation/native';
+import { NavigationProp, ParamListBase } from '@react-navigation/native';
+import Editable from '../Editable';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import Iconn from 'react-native-vector-icons/EvilIcons'
+import Iconfromentypo from 'react-native-vector-icons/Entypo'
+import Iconchev from 'react-native-vector-icons/Entypo'
 
 interface Props {
   navigation: NavigationProp<ParamListBase>;
@@ -29,11 +32,18 @@ const Tasks = ({ navigation }: Props) => {
   const textInputRef = useRef(null);
   const scrollViewRef = useRef(null);
   const refRBSheet = useRef<RBSheet>(null);
+  const refEditableTask = useRef<RBSheet>(null);
   const [task, setTask] = useState('');
   const [star, setStar] = useState<Record<string, boolean>>({});
   const [isRBSheetOpen, setIsRBSheetOpen] = useState(false);
   const [rotationAnimation] = useState(new Animated.Value(0));
   const scrollY = useRef(new Animated.Value(0)).current;
+  const [selectedItem, setSelectedItem] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+
   const [tasks, setTasks] = useState<
     {
       id: string;
@@ -166,7 +176,7 @@ const Tasks = ({ navigation }: Props) => {
   }, [completedTasks]);
 
   const toggleCompletedDropdown = () => {
-   
+
     LayoutAnimation.configureNext({
       duration: 500,
       create:
@@ -220,12 +230,15 @@ const Tasks = ({ navigation }: Props) => {
     }
   };
 
+
   const starChange = (id: string) => {
     setStar((prevStars) => {
       const updatedStars = { ...prevStars, [id]: !prevStars[id] };
       return updatedStars;
     });
   };
+
+
 
   useEffect(() => {
     Animated.timing(rotationAnimation, {
@@ -246,18 +259,31 @@ const Tasks = ({ navigation }: Props) => {
       },
     ],
   };
+  // console.log('tasks',tasks)
 
-  // const headerHeight = scrollY.interpolate({
-  //   inputRange: [20, 100], // adjust the range based on when you want the animation to happen
-  //   outputRange: [35, 15], // adjust the height values
-  //   extrapolate: 'clamp',
-  // });
+  //   const finalEditabletasks = finalTasks.map((item) => item.name)
 
-  // const headerTranslateY = scrollY.interpolate({
-  //   inputRange: [0, 100], // adjust the range based on when you want the animation to happen
-  //   outputRange: [0, -15], // adjust the translateY values
-  //   extrapolate: 'clamp',
-  // });
+  const openRBSheet = (item: any) => {
+    if (refEditableTask?.current) {
+      refEditableTask.current.open();
+      setIsRBSheetOpen(true)
+      setSelectedItem(item)
+    }
+
+  };
+
+  const updateTaskList = (newTaskName: string) => {
+    const updatedTasks = tasks.map(task => {
+      console.log('task.id', task.id)
+      if (task.id === selectedItem.id) {
+        return { ...task, name: newTaskName }
+      }
+      return task
+    })
+    setTasks(updatedTasks)
+
+  }
+
 
   return (
     <>
@@ -265,54 +291,37 @@ const Tasks = ({ navigation }: Props) => {
         [{ nativeEvent: { contentOffset: { y: scrollY } } }],
         { useNativeDriver: false } // make sure to set this to false when using contentOffset
       )}
-      scrollEventThrottle={16} ref={scrollViewRef}>
-        {/* <RowContainer>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-
-            <Image source={require('../../../../assets/images/chevron_left.png')} style={{ width: 30, height: 30 }} />
-
-          </TouchableOpacity>
-
-        </RowContainer> */}
-        {/* <Animated.Text
-        style={[
-          {
-            fontSize: headerHeight,
-            transform: [{ translateY: headerTranslateY }],
-          },
-        ]}
-      > */}
-        
-{/* </Animated.Text> */}
+        scrollEventThrottle={16} ref={scrollViewRef}>
         <FlatList
           data={tasks.filter(task => !completedTasks.some(c => c.id === task.id))}
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
             <>
               <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-                <TouchableOpacity
-                  activeOpacity={1}
+                <Pressable
                   style={styles.incompletetasks}
+                  onPress={() => openRBSheet(item.name)}
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
                     <TouchableOpacity onPress={() => handleCompleteTask(item.id)}>
-                      <Image
-                        source={require('../../../../assets/images/empty_circlee.png')}
-                        style={styles.image}
-                      />
+                      <Icon name="circle-thin" size={22} color="grey" />
                     </TouchableOpacity>
                     <HeadingText
                       textString={item.name}
                       fontSize={16}
                       fontWeight="500"
                       fontFamily="SuisseIntl"
+                      marginLeft={10}
                     />
                   </View>
                   <Pressable key={item.id} onPress={() => starChange(item.id)}>
-                    <Image source={star[item.id] ? require('../../../../assets/images/starfilled.png') : require('../../../../assets/images/star.png')} />
+                    {star[item.id] ? <Iconn name="star" size={25} color="grey" /> 
+                    : <Iconfromentypo name="star" size={22} color="grey" style = {{color:'#f5eb05'}}/>
+                    }
+                    {/* <Image source={star[item.id] ? require('../../../../assets/images/starfilled.png') : require('../../../../assets/images/star.png')} /> */}
                   </Pressable>
 
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </>
           )}
@@ -321,8 +330,8 @@ const Tasks = ({ navigation }: Props) => {
         {completedTasks.length > 0 &&
           <Pressable onPress={toggleCompletedDropdown} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 7 }}>
             <Animated.View style={[animatedStyle]}>
-              <Image source={require('../../../../assets/images/completed.png')}
-             />
+              <Iconchev name="chevron-small-right" size={20} color="white"/>
+              
             </Animated.View>
             <HeadingText
               textString={`Completed ${completedTasks.length}`}
@@ -343,12 +352,12 @@ const Tasks = ({ navigation }: Props) => {
             renderItem={({ item }) => (
               <>
                 <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-                  <TouchableOpacity
-                    activeOpacity={1}
+                  <Pressable
                     key={item.id}
                     style={styles.completedtasks}
+                    onPress={() => openRBSheet(item.name)}
                   >
-                    <View style={{ flexDirection: 'row' }}>
+                    <View style={{ flexDirection: 'row', marginLeft: -2.5 }}>
                       <TouchableOpacity onPress={() => {
                         completeTask(item.id);
                       }}>
@@ -364,12 +373,12 @@ const Tasks = ({ navigation }: Props) => {
                         fontWeight="500"
                         fontFamily="SuisseIntl"
                         textDecorationLine="line-through"
-                        marginLeft={10}
+                        marginLeft={7}
 
                       />
                     </View>
-                    <Image source={require('../../../../assets/images/star.png')} />
-                  </TouchableOpacity>
+                    <Iconn name="star" size={25} color="grey" /> 
+                  </Pressable>
                 </View>
               </>)}
 
@@ -406,6 +415,28 @@ const Tasks = ({ navigation }: Props) => {
             inputRef={textInputRef}
           />
         </RBSheet>
+
+        <RBSheet
+          ref={refEditableTask}
+          closeOnDragDown={false}
+          closeOnPressMask={true}
+          animationType="slide"
+          height={70}
+          isOpen={isRBSheetOpen}
+          customStyles={{
+            wrapper: {
+              backgroundColor: 'transparent',
+            },
+            draggableIcon: {
+              backgroundColor: '#000',
+
+            },
+            container: {
+              height: '40%',
+            }
+          }}>
+          <Editable onEdit={updateTaskList} tasks={tasks} setTasks={setTasks} navigation={navigation} star={star} selectedItem={selectedItem} />
+        </RBSheet>
       </ScrollView>
 
       <View
@@ -429,7 +460,6 @@ const Tasks = ({ navigation }: Props) => {
             }}
 
           />
-          {/* <TextInput placeholder='text'/> */}
         </Pressable>
       </View>
 
@@ -459,12 +489,8 @@ const styles = StyleSheet.create({
     width: '70%', // Set the width of the modal
     maxWidth: 300, // Set the maximum width of the modal
   },
-  imageTextContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    height: 75,
-    width: 150,
+  icons: {
+
   },
   incompletetasks: {
     elevation: 6,
