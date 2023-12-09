@@ -22,7 +22,7 @@ const Editable = (props: any) => {
                 {/* Render your Editable screen with the selected item data */}
                 {/* <Text style = {styles.task}>{taskItem.name}</Text> */}
                 <View style={styles.taskContainer}>
-                    <View style={{ flexDirection: 'row', width: 110, justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View style={styles.editablecontainer}>
                         <Icon name="circle-thin" size={22} color="grey" />
                         <TextInputSingleLine
                             onChangeText={handleTextChange}
@@ -90,6 +90,12 @@ const Editable = (props: any) => {
 const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
+    },
+    editablecontainer:{
+        flexDirection: 'row', 
+        width: 110, 
+        justifyContent: 'space-between', 
+        alignItems: 'center' 
     },
     taskContainer: {
         elevation: 8,

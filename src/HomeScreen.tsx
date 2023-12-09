@@ -47,9 +47,9 @@ const HomeScreen = ({navigation}: Props) => {
         />
       </TouchableOpacity>
       <TouchableOpacity
-        style={styles.imageTextContainer}
+        style={styles.imageTextContainerr}
         onPress={() => navigation.navigate('Tasks')}>
-        <Task  name="calendar-check-o" size={20} color="#7568f8" style={{marginRight:20}}/>
+        <Task  name="calendar-check-o" size={19} color="#7568f8" style={{marginRight:20}}/>
         <HeadingText
           textString={'Tasks'}
           fontSize={16}
@@ -80,4 +80,11 @@ const styles = StyleSheet.create({
     height: 20,
     marginRight: 20,
   },
+  imageTextContainerr:{
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 18,
+    height: 75,
+    width: 150,
+  }
 });

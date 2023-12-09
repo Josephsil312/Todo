@@ -5,9 +5,6 @@ import {
   FlatList,
   Pressable,
   Image,
-  LayoutAnimation,
-  Platform,
-  UIManager,
   ScrollView,
   Animated,
   Easing
@@ -23,7 +20,9 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import Iconn from 'react-native-vector-icons/EvilIcons'
 import Iconfromentypo from 'react-native-vector-icons/Entypo'
 import Iconchev from 'react-native-vector-icons/Entypo'
-import Plusicon from 'react-native-vector-icons/AntDesign'
+import Plusicon from 'react-native-vector-icons/AntDesign';
+import {Animate} from '../Animationn';
+
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
@@ -43,8 +42,6 @@ const Tasks = ({ navigation }: Props) => {
     id: string;
     name: string;
   } | null>(null);
-
-
   const [tasks, setTasks] = useState<
     {
       id: string;
@@ -60,34 +57,16 @@ const Tasks = ({ navigation }: Props) => {
 
   const [showCompletedDropdown, setShowCompletedDropdown] = useState(false);
 
-  if (Platform.OS === 'android') {
-    UIManager.setLayoutAnimationEnabledExperimental &&
-      UIManager.setLayoutAnimationEnabledExperimental(true);
-  }
-
   const handleAddTask = async () => {
     if (task.trim() !== '') {
       const taskId = Date.now().toString();
       const newTask = { id: taskId, name: task };
       const updatedTasks = [...tasks, newTask];
-
-      // Set state and AsyncStorage first
       try {
         await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
         setTasks(updatedTasks);
         setTask('');
-        LayoutAnimation.configureNext({
-          duration: 500,
-          create:
-          {
-            type: LayoutAnimation.Types.easeInEaseOut,
-            property: LayoutAnimation.Properties.opacity,
-          },
-          update:
-          {
-            type: LayoutAnimation.Types.easeInEaseOut,
-          }
-        });
+      
       } catch (error) {
         console.error('Error saving tasks to AsyncStorage:', error);
       }
@@ -109,7 +88,6 @@ const Tasks = ({ navigation }: Props) => {
         console.log('Error loading tasks from AsyncStorage:', error);
       }
     };
-
     loadTasks();
   }, []);
 
@@ -120,18 +98,7 @@ const Tasks = ({ navigation }: Props) => {
       if (completedTask) {
         const updatedTasks = tasks.filter(task => task.id !== taskId);
         const updatedCompletedTasks = [...completedTasks, completedTask];
-        LayoutAnimation.configureNext({
-          duration: 500,
-          create:
-          {
-            type: LayoutAnimation.Types.easeInEaseOut,
-            property: LayoutAnimation.Properties.opacity,
-          },
-          update:
-          {
-            type: LayoutAnimation.Types.easeInEaseOut,
-          }
-        });
+        Animate()//animation
         setTasks(updatedTasks);
         setCompletedTasks(updatedCompletedTasks);
         await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
@@ -177,19 +144,7 @@ const Tasks = ({ navigation }: Props) => {
   }, [completedTasks]);
 
   const toggleCompletedDropdown = () => {
-
-    LayoutAnimation.configureNext({
-      duration: 500,
-      create:
-      {
-        type: LayoutAnimation.Types.easeInEaseOut,
-        property: LayoutAnimation.Properties.opacity,
-      },
-      update:
-      {
-        type: LayoutAnimation.Types.easeInEaseOut,
-      }
-    });
+    Animate()
     setShowCompletedDropdown(!showCompletedDropdown);
   };
 
@@ -201,20 +156,8 @@ const Tasks = ({ navigation }: Props) => {
       const completedTask = completedTasks[completedTaskIndex];
       const updatedCompletedTasks = [...completedTasks];
       updatedCompletedTasks.splice(completedTaskIndex, 1);
-      LayoutAnimation.configureNext({
-        duration: 500,
-        create:
-        {
-          type: LayoutAnimation.Types.easeInEaseOut,
-          property: LayoutAnimation.Properties.opacity,
-        },
-        update:
-        {
-          type: LayoutAnimation.Types.easeInEaseOut,
-        }
-      });
+      Animate()
       setCompletedTasks(updatedCompletedTasks);
-
       setTasks(prevTasks => [...prevTasks, completedTask]);
       try {
         await AsyncStorage.setItem(
@@ -239,8 +182,6 @@ const Tasks = ({ navigation }: Props) => {
     });
   };
 
-
-
   useEffect(() => {
     Animated.timing(rotationAnimation, {
       toValue: showCompletedDropdown ? 1 : 0,
@@ -260,22 +201,14 @@ const Tasks = ({ navigation }: Props) => {
       },
     ],
   };
-  // console.log('tasks',tasks)
-
-  //   const finalEditabletasks = finalTasks.map((item) => item.name)
 
   const openRBSheet = (item: any) => {
-    
     if (refEditableTask?.current) {
       refEditableTask.current.open();
       setIsRBSheetOpen(true)
       setSelectedItem(item)
     }
-
   };
-
-
-
 
   return (
     <>
@@ -289,12 +222,12 @@ const Tasks = ({ navigation }: Props) => {
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
             <>
-              <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+              <View style={styles.flatlistitem}>
                 <Pressable
                   style={styles.incompletetasks}
                   onPress={() => {openRBSheet(item.name);setStarId(item.id)}}
                 >
-                  <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+                  <View style={styles.icontextcontainer}>
                     <TouchableOpacity onPress={() => handleCompleteTask(item.id)}>
                       <Icon name="circle-thin" size={22} color="grey" />
                     </TouchableOpacity>
@@ -305,15 +238,12 @@ const Tasks = ({ navigation }: Props) => {
                       fontFamily="SuisseIntl"
                       marginLeft={10}
                     />
-                  </View>
-                  
+                  </View>                 
                   <Pressable key={item.id} onPress={() => starChange(item.id)}>
                     {star[item.id] ?  <Iconfromentypo name="star" size={22} color="grey" style = {{color:'#f5eb05'}}/>
                     : <Iconn name="star" size={25} color="grey" />
-                    }
-                
+                    }               
                   </Pressable>
-
                 </Pressable>
               </View>
             </>
@@ -321,10 +251,9 @@ const Tasks = ({ navigation }: Props) => {
         />
 
         {completedTasks.length > 0 &&
-          <Pressable onPress={toggleCompletedDropdown} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 7 }}>
+          <Pressable onPress={toggleCompletedDropdown} style={styles.completedlistlength}>
             <Animated.View style={[animatedStyle]}>
-              <Iconchev name="chevron-small-right" size={20} color="white"/>
-              
+              <Iconchev name="chevron-small-right" size={20} color="white"/>     
             </Animated.View>
             <HeadingText
               textString={`Completed ${completedTasks.length}`}
@@ -336,15 +265,13 @@ const Tasks = ({ navigation }: Props) => {
           </Pressable>
         }
 
-
-
         {showCompletedDropdown && (
           <FlatList
             style={{ marginBottom: 10 }}
             data={completedTasks}
             renderItem={({ item }) => (
               <>
-                <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+                <View style={styles.flatlistitem}>
                   <Pressable
                     key={item.id}
                     style={styles.completedtasks}
@@ -387,7 +314,6 @@ const Tasks = ({ navigation }: Props) => {
           animationType="fade"
           height={70}
           isOpen={isRBSheetOpen}
-
           customStyles={{
             wrapper: {
               backgroundColor: 'transparent',
@@ -433,11 +359,7 @@ const Tasks = ({ navigation }: Props) => {
       </ScrollView>
 
       <View
-        style={{
-          position: 'absolute',
-          bottom: 7,
-          right: 7,
-        }}>
+        style={styles.addicon}>
         <Pressable
           onPress={() => {
             if (refRBSheet?.current) {
@@ -460,6 +382,15 @@ const styles = StyleSheet.create({
     height: 20,
     marginRight: 13,
   },
+  completedlistlength:{
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 7
+  },
+  icontextcontainer:{
+    flexDirection: 'row', 
+    alignItems: 'flex-end'
+  },
   taskContainer: {
     flexGrow: 1,
     backgroundColor: '#7568f8',
@@ -475,6 +406,10 @@ const styles = StyleSheet.create({
     padding: 16,
     width: '70%', // Set the width of the modal
     maxWidth: 300, // Set the maximum width of the modal
+  },
+  flatlistitem:{
+    flexDirection: 'row', 
+    justifyContent: 'center'
   },
   icons: {
 
@@ -497,6 +432,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.6,
     shadowRadius: 20,
     width: '100%'
+  },
+  addicon:{
+    position: 'absolute',
+    bottom: 7,
+    right: 7,
   },
   completedtasks: {
     shadowColor: '#005F8D',

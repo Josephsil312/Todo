@@ -2,7 +2,6 @@ import { StyleSheet, View, Modal, TouchableWithoutFeedback, Image, TouchableOpac
 import React, { useState, useEffect } from 'react'
 import { HeadingText } from '../../Texts';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { BlurView } from "@react-native-community/blur";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 const CustomModal = (props: {
     setModalVisible: (arg0: any) => any;
@@ -14,19 +13,15 @@ const CustomModal = (props: {
 }) => {
     const [date, setDate] = useState(new Date());
     const [showPicker, setShowPicker] = useState(false);
-    const [selectedText, setSelectedText] = useState('Set due date');
 
     const showDatePicker = () => {
         setShowPicker(true);
-      
     };
 
     const hideDatePicker = () => {
         setShowPicker(false);
        
     };
-
-
 
     const handleDateChange = (event: { type: string; }, selectedDate: any) => {
         if (event.type === 'set') {
@@ -55,8 +50,6 @@ const CustomModal = (props: {
     const isToday = (selectedDate: Date) => {
         const todaydate = selectedDate.getDate();
         console.log('clicked today', todaydate)
-        // props.setIsDueToday(true);
-        // props.setModalVisible(false);
         toggleFeature()
         return (
             selectedDate.getDate() === today.getDate() &&
@@ -118,7 +111,7 @@ const CustomModal = (props: {
                     <View style={styles.centeredView}>
                         <View style={styles.modalView}>
                             <TouchableOpacity onPress={() => isToday(date)}>
-                                <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+                                <View style={styles.modalcontainer}>
                                     <Image source={require('../../../../assets/images/today.png')} style={{ marginVertical: 10 }} />
                                     <HeadingText
                                         textString={`Today (${formatDateToDayOfWeek(today)})`}
@@ -131,7 +124,7 @@ const CustomModal = (props: {
                                 </View>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={() => {}}>
-                                <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+                                <View style={styles.modalcontainer}>
                                     <Image source={require('../../../../assets/images/tomorrow.png')} style={{ marginVertical: 10 }} />
                                     <HeadingText
                                         textString={`Tomorrow (${formatDateToDayOfWeek(tomorrow)})`}
@@ -144,7 +137,7 @@ const CustomModal = (props: {
                                 </View>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={showDatePicker}>
-                                <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+                                <View style={styles.modalcontainer}>
                                     <Image source={require('../../../../assets/images/pickdate.png')} style={{ marginVertical: 10 }} />
                                     <HeadingText
                                         textString={`Pick a date`}
@@ -219,4 +212,9 @@ const styles = StyleSheet.create({
         bottom: 0,
         right: 0,
     },
+    modalcontainer:{
+        flexDirection: 'row',
+        justifyContent: 'center', 
+        alignItems: 'center' 
+    }
 });

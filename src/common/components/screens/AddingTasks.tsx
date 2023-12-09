@@ -1,10 +1,10 @@
-import { View, TouchableOpacity, Image, Pressable } from 'react-native';
+import { View, TouchableOpacity, Pressable,StyleSheet } from 'react-native';
 import React, { useState } from 'react';
 import { TextInputSingleLine } from '../../../styled';
 import { HeadingText } from '../../Texts';
 import CustomModal from './CustomModal';
 import Iconn from 'react-native-vector-icons/Ionicons';
-import Icon from 'react-native-vector-icons/Ionicons'
+
 const AddingTasks = (props: {
   setTask: (arg0: any) => any;
   task: any;
@@ -34,7 +34,7 @@ const AddingTasks = (props: {
           ref={props.inputRef}
         // onLayout={() => props.inputRef.current?.focus()}
         />
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View style={styles.addtask}>
           <TouchableOpacity onPress={openModal}>
             <HeadingText
               textString={isDueToday ? 'Due Today' : 'Set Due date'}
@@ -45,16 +45,12 @@ const AddingTasks = (props: {
               marginVertical={10}
             />
           </TouchableOpacity>
-          <Pressable onPress={props.handleAddTask} style={{ position: 'relative', zIndex: 9999999 }}>
+          <Pressable onPress={props.handleAddTask} style={styles.addingtaskicon}>
             {
               props.task.trim() !== ''
                 ? <Iconn name="arrow-up-circle" size={30} color="#c880f9" />
                 : <Iconn name="arrow-up-circle-outline" size={30} color="grey" />
             }
-
-
-
-
           </Pressable>
         </View>
       </View>
@@ -63,4 +59,20 @@ const AddingTasks = (props: {
   );
 };
 
+
+const styles = StyleSheet.create({
+  image: {
+    height: 40,
+    width: 40,
+  },
+  addtask:{
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center'
+  },
+  addingtaskicon:{
+    position: 'relative', 
+    zIndex: 9999999 
+  }
+});
 export default AddingTasks;
