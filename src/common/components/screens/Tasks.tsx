@@ -212,11 +212,7 @@ const Tasks = ({ navigation }: Props) => {
 
   return (
     <>
-      <ScrollView style={styles.taskContainer} keyboardShouldPersistTaps='always' onScroll={Animated.event(
-        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-        { useNativeDriver: false } // make sure to set this to false when using contentOffset
-      )}
-        scrollEventThrottle={16} ref={scrollViewRef}>
+      <ScrollView style={styles.taskContainer} keyboardShouldPersistTaps='always' >
         <FlatList
           data={tasks.filter(task => !completedTasks.some(c => c.id === task.id))}
           keyExtractor={item => item.id}
