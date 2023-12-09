@@ -1,32 +1,21 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Image, Text, Pressable } from 'react-native';
+import { View, StyleSheet} from 'react-native';
 import { HeadingText } from '../../common/Texts';
-import { NavigationProp, ParamListBase } from '@react-navigation/native';
 import { TextInputSingleLine } from '../../styled';
 import Iconn from 'react-native-vector-icons/EvilIcons'
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Iconfont from 'react-native-vector-icons/Fontisto';
 import DateIcon from 'react-native-vector-icons/Fontisto';
+
+import Iconfromentypo from 'react-native-vector-icons/Entypo'
 const Editable = (props: any) => {
-
-    const id = props.selectedItem.id;
+    console.log('linethrough',props.lineThrough)
     const [editedText, setEditedText] = useState(props.selectedItem);
-
+    const selectedStarId = props.starId;
     const handleTextChange = (text: string) => {
         setEditedText(text);
     };
-    const saveChanges = () => {
-        const updatedTask = {
-          id: props.selectedItem.id,
-          name: editedText,
-        };
-    
-        // Call the onEdit function passed as a prop
-        props.onEdit(updatedTask);
-    
-        // Optionally, you can close the RBSheet or perform other actions
-        // ...
-      };
+  
     return (
         <>
             <View style={styles.container}>
@@ -34,7 +23,7 @@ const Editable = (props: any) => {
                 {/* <Text style = {styles.task}>{taskItem.name}</Text> */}
                 <View style={styles.taskContainer}>
                     <View style={{ flexDirection: 'row', width: 110, justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Icon name="circle-thin" size={22} color="grey" />
+                        <Icon name="circle-thin" size={22} color="grey" />
                         <TextInputSingleLine
                             onChangeText={handleTextChange}
                             value={editedText}
@@ -42,14 +31,23 @@ const Editable = (props: any) => {
                             maxLength={256}
                             color={'grey'}
                             ref={props.inputRef}
+                            style={{ textDecorationLine: props.lineThrough ? 'none' : 'line-through' }}
                         />
                     </View>
-        
-                    <Iconn name="star" size={25} color="grey" />
+                    {selectedStarId && (
+                        <View>
+                            {props.star[selectedStarId] ? (
+                                <Iconfromentypo name="star" size={22} color="#f5eb05" />
+                            ) : (
+                                <Iconn name="star" size={25} color="grey" />
+                            )}
+                        </View>
+                    )}
+
                 </View>
                 <View style={styles.secondContainer}>
                     <View style={styles.addtomyday}>
-                    <Iconfont name="day-sunny" size={22} color="grey" />
+                        <Iconfont name="day-sunny" size={22} color="grey" />
                         <HeadingText
                             textString={'Add to My Day'}
                             fontSize={16}
@@ -61,7 +59,7 @@ const Editable = (props: any) => {
                         />
                     </View>
                     <View style={styles.addtomyday}>
-                    <DateIcon name="date" size={22} color="grey" />
+                        <DateIcon name="date" size={22} color="grey" />
                         <HeadingText
                             textString={'Add due date'}
                             fontSize={16}
@@ -73,18 +71,16 @@ const Editable = (props: any) => {
                         />
                     </View>
                 </View>
-                <Pressable onPress={() => props.navigation.navigate('Add Note', {
-                    selectedItem: props.selectedItem
-                })} style={styles.notes}>
-                    <HeadingText
-                        textString={'Add note'}
-                        fontSize={16}
-                        fontWeight="500"
-                        fontFamily="SuisseIntl"
-                        textDecorationLine="none"
-                        color='#a8afb3'
-                    />
-                </Pressable>
+                <View style={styles.notes}>
+                <TextInputSingleLine
+                            onChangeText={() => {}}
+                            multipleLine={6}
+                            placeholder={'Add task'}
+                            maxLength={256}
+                            color={'grey'}
+                            ref={props.inputRef}
+                        />
+                </View >
             </View>
         </>
     );
@@ -97,7 +93,7 @@ const styles = StyleSheet.create({
     },
     taskContainer: {
         elevation: 8,
-        paddingHorizontal: 10,
+        paddingHorizontal: 21,
         flexDirection: 'row',
         marginBottom: 6,
         shadowColor: '#005F8D',
@@ -132,7 +128,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal:10
+        paddingHorizontal: 10
     },
     notes: {
         elevation: 6,

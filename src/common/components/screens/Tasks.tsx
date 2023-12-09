@@ -38,6 +38,7 @@ const Tasks = ({ navigation }: Props) => {
   const [isRBSheetOpen, setIsRBSheetOpen] = useState(false);
   const [rotationAnimation] = useState(new Animated.Value(0));
   const scrollY = useRef(new Animated.Value(0)).current;
+  const [starId,setStarId] = useState('');
   const [selectedItem, setSelectedItem] = useState<{
     id: string;
     name: string;
@@ -264,6 +265,7 @@ const Tasks = ({ navigation }: Props) => {
   //   const finalEditabletasks = finalTasks.map((item) => item.name)
 
   const openRBSheet = (item: any) => {
+    
     if (refEditableTask?.current) {
       refEditableTask.current.open();
       setIsRBSheetOpen(true)
@@ -272,17 +274,7 @@ const Tasks = ({ navigation }: Props) => {
 
   };
 
-  const updateTaskList = (newTaskName: string) => {
-    const updatedTasks = tasks.map(task => {
-      console.log('task.id', task.id)
-      if (task.id === selectedItem.id) {
-        return { ...task, name: newTaskName }
-      }
-      return task
-    })
-    setTasks(updatedTasks)
 
-  }
 
 
   return (
@@ -300,7 +292,7 @@ const Tasks = ({ navigation }: Props) => {
               <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
                 <Pressable
                   style={styles.incompletetasks}
-                  onPress={() => openRBSheet(item.name)}
+                  onPress={() => {openRBSheet(item.name);setStarId(item.id)}}
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
                     <TouchableOpacity onPress={() => handleCompleteTask(item.id)}>
@@ -356,7 +348,7 @@ const Tasks = ({ navigation }: Props) => {
                   <Pressable
                     key={item.id}
                     style={styles.completedtasks}
-                    onPress={() => openRBSheet(item.name)}
+                    onPress={() => {openRBSheet(item.name);setStarId(item.id)}}
                   >
                     <View style={{ flexDirection: 'row', marginLeft: -2.5 }}>
                       <TouchableOpacity onPress={() => {
@@ -436,7 +428,7 @@ const Tasks = ({ navigation }: Props) => {
               height: '40%',
             }
           }}>
-          <Editable onEdit={updateTaskList} tasks={tasks} setTasks={setTasks} navigation={navigation} star={star} selectedItem={selectedItem} />
+          <Editable  starId = {starId} tasks={tasks} setTasks={setTasks} navigation={navigation} star={star} selectedItem={selectedItem} />
         </RBSheet>
       </ScrollView>
 
