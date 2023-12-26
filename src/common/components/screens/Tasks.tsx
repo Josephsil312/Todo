@@ -7,9 +7,11 @@ import {
   Image,
   ScrollView,
   Animated,
-  Easing
+  Easing,
+  Text,
+  LayoutAnimation
 } from 'react-native';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import { HeadingText } from '../../Texts';
@@ -21,7 +23,7 @@ import Iconn from 'react-native-vector-icons/EvilIcons'
 import Iconfromentypo from 'react-native-vector-icons/Entypo'
 import Iconchev from 'react-native-vector-icons/Entypo'
 import Plusicon from 'react-native-vector-icons/AntDesign';
-import {Animate} from '../Animationn';
+import { Swipeable, GestureHandlerRootView } from 'react-native-gesture-handler';
 
 interface Props {
   navigation: NavigationProp<ParamListBase>;
@@ -36,8 +38,7 @@ const Tasks = ({ navigation }: Props) => {
   const [star, setStar] = useState<Record<string, boolean>>({});
   const [isRBSheetOpen, setIsRBSheetOpen] = useState(false);
   const [rotationAnimation] = useState(new Animated.Value(0));
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const [starId,setStarId] = useState('');
+  const [starId, setStarId] = useState('');
   const [selectedItem, setSelectedItem] = useState<{
     id: string;
     name: string;
@@ -54,8 +55,23 @@ const Tasks = ({ navigation }: Props) => {
       name: string;
     }[]
   >([]);
-
   const [showCompletedDropdown, setShowCompletedDropdown] = useState(false);
+
+  const Animate = () => {
+    LayoutAnimation.configureNext({
+      duration: 500,
+      create:
+      {
+        type: LayoutAnimation.Types.easeInEaseOut,
+        property: LayoutAnimation.Properties.opacity,
+      },
+      update:
+      {
+        type: LayoutAnimation.Types.easeInEaseOut,
+      }
+    });
+  }
+
 
   const handleAddTask = async () => {
     if (task.trim() !== '') {
@@ -66,7 +82,7 @@ const Tasks = ({ navigation }: Props) => {
         await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
         setTasks(updatedTasks);
         setTask('');
-      
+
       } catch (error) {
         console.error('Error saving tasks to AsyncStorage:', error);
       }
@@ -91,6 +107,18 @@ const Tasks = ({ navigation }: Props) => {
     loadTasks();
   }, []);
 
+  const deleteTask = async (id: String) => {
+    const updatedTasks = tasks.filter((task) => task.id !== id);
+    try {
+      await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
+      Animate()
+      setTasks(updatedTasks);
+      setTask('');
+    } catch (error) {
+      console.error('Error saving tasks to AsyncStorage:', error);
+    }
+  }
+
   const handleCompleteTask = async (taskId: string) => {
     try {
       const completedTask = tasks.find(task => task.id === taskId);
@@ -112,6 +140,20 @@ const Tasks = ({ navigation }: Props) => {
     }
   };
 
+  const deleteCompleted = async (id: any) => {
+    const updatedCompletedTasks = completedTasks.filter((task) => task.id !== id)
+    setCompletedTasks(updatedCompletedTasks)
+    Animate()
+    try {
+      await AsyncStorage.setItem(
+        'completedTasks',
+        JSON.stringify(updatedCompletedTasks),
+      );
+    } catch (error) {
+      console.log('Error deleting completed task:', error);
+    }
+  }
+
   useEffect(() => {
     const loadCompletedTasks = async () => {
       try {
@@ -125,7 +167,6 @@ const Tasks = ({ navigation }: Props) => {
         console.log('Error loading completed tasks from AsyncStorage:', error);
       }
     };
-
     loadCompletedTasks();
   }, []);
 
@@ -174,7 +215,6 @@ const Tasks = ({ navigation }: Props) => {
     }
   };
 
-
   const starChange = (id: string) => {
     setStar((prevStars) => {
       const updatedStars = { ...prevStars, [id]: !prevStars[id] };
@@ -210,50 +250,72 @@ const Tasks = ({ navigation }: Props) => {
     }
   };
 
+  const rightSwipe = (id: String) => {
+    
+    return (
+      <View>
+        <TouchableOpacity onPress = {() =>deleteTask(id)}>
+          <Text>Delete</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+  const rightSwipee = (id: String) => {
+    
+    return (
+      <View>
+        <TouchableOpacity onPress = {() => deleteCompleted(id)}>
+          <Text>Delete</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+
   return (
     <>
-      <ScrollView style={styles.taskContainer} keyboardShouldPersistTaps='always' onScroll={Animated.event(
-        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-        { useNativeDriver: false } // make sure to set this to false when using contentOffset
-      )}
-        scrollEventThrottle={16} ref={scrollViewRef}>
-        <FlatList
-          data={tasks.filter(task => !completedTasks.some(c => c.id === task.id))}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <>
-              <View style={styles.flatlistitem}>
-                <Pressable
-                  style={styles.incompletetasks}
-                  onPress={() => {openRBSheet(item.name);setStarId(item.id)}}
-                >
-                  <View style={styles.icontextcontainer}>
-                    <TouchableOpacity onPress={() => handleCompleteTask(item.id)}>
-                      <Icon name="circle-thin" size={22} color="grey" />
-                    </TouchableOpacity>
-                    <HeadingText
-                      textString={item.name}
-                      fontSize={16}
-                      fontWeight="500"
-                      fontFamily="SuisseIntl"
-                      marginLeft={10}
-                    />
-                  </View>                 
-                  <Pressable key={item.id} onPress={() => starChange(item.id)}>
-                    {star[item.id] ?  <Iconfromentypo name="star" size={22} color="grey" style = {{color:'#f5eb05'}}/>
-                    : <Iconn name="star" size={25} color="grey" />
-                    }               
-                  </Pressable>
-                </Pressable>
-              </View>
-            </>
-          )}
-        />
+      <ScrollView style={styles.taskContainer} keyboardShouldPersistTaps='always' ref={scrollViewRef}>
+        <GestureHandlerRootView>
+          <FlatList
+            data={tasks.filter(task => !completedTasks.some(c => c.id === task.id))}
+            keyExtractor={item => item.id}
+            renderItem={({ item }) => (
+              <>
+                <Swipeable renderRightActions={() => rightSwipe(item.id)}>
+                  <View style={styles.flatlistitem}>
+                    <Pressable
+                      style={styles.incompletetasks}
+                      onPress={() => { openRBSheet(item.name); setStarId(item.id) }}
+                    >
+                      <View style={styles.icontextcontainer}>
+                        <TouchableOpacity onPress={() => handleCompleteTask(item.id)}>
+                          <Icon name="circle-thin" size={22} color="grey" />
+                        </TouchableOpacity>
+                        <HeadingText
+                          textString={item.name}
+                          fontSize={16}
+                          fontWeight="500"
+                          fontFamily="SuisseIntl"
+                          marginLeft={10}
+                        />
+                      </View>
+                      <Pressable key={item.id} onPress={() => starChange(item.id)}>
+                        {star[item.id] ? <Iconfromentypo name="star" size={22} color="grey" style={{ color: '#f5eb05' }} />
+                          : <Iconn name="star" size={25} color="grey" />
+                        }
+                      </Pressable>
+                    </Pressable>
+                  </View>
+                </Swipeable>
+              </>
+            )}
+          />
+        </GestureHandlerRootView>
 
-        {completedTasks.length > 0 &&
+        {<Text>{completedTasks.length}</Text> &&
           <Pressable onPress={toggleCompletedDropdown} style={styles.completedlistlength}>
             <Animated.View style={[animatedStyle]}>
-              <Iconchev name="chevron-small-right" size={20} color="white"/>     
+              <Iconchev name="chevron-small-right" size={20} color="white" />
             </Animated.View>
             <HeadingText
               textString={`Completed ${completedTasks.length}`}
@@ -266,46 +328,47 @@ const Tasks = ({ navigation }: Props) => {
         }
 
         {showCompletedDropdown && (
-          <FlatList
-            style={{ marginBottom: 10 }}
-            data={completedTasks}
-            renderItem={({ item }) => (
-              <>
-                <View style={styles.flatlistitem}>
-                  <Pressable
-                    key={item.id}
-                    style={styles.completedtasks}
-                    onPress={() => {openRBSheet(item.name);setStarId(item.id)}}
-                  >
-                    <View style={{ flexDirection: 'row', marginLeft: -2.5 }}>
-                      <TouchableOpacity onPress={() => {
-                        completeTask(item.id);
-                      }}>
-                        <Image
-                          source={require('../../../../assets/images/checkedCircle.png')}
-                          style={{ height: 25, width: 25 }}
-                        />
-                      </TouchableOpacity>
-
-                      <HeadingText
-                        textString={item.name}
-                        fontSize={16}
-                        fontWeight="500"
-                        fontFamily="SuisseIntl"
-                        textDecorationLine="line-through"
-                        marginLeft={7}
-
-                      />
+          <GestureHandlerRootView>
+            <FlatList
+              style={{ marginBottom: 10 }}
+              data={completedTasks}
+              renderItem={({ item }) => (
+                <>
+                  <Swipeable renderRightActions={() => rightSwipee(item.id)}>
+                    <View style={styles.flatlistitem}>
+                      <Pressable
+                        key={item.id}
+                        style={styles.completedtasks}
+                        onPress={() => { openRBSheet(item.name); setStarId(item.id) }}
+                      >
+                        <View style={{ flexDirection: 'row', marginLeft: -2.5 }}>
+                          <TouchableOpacity onPress={() => {
+                            completeTask(item.id);
+                          }}>
+                            <Image
+                              source={require('../../../../assets/images/checkedCircle.png')}
+                              style={{ height: 25, width: 25 }}
+                            />
+                          </TouchableOpacity>
+                          <HeadingText
+                            textString={item.name}
+                            fontSize={16}
+                            fontWeight="500"
+                            fontFamily="SuisseIntl"
+                            textDecorationLine="line-through"
+                            marginLeft={7}
+                          />
+                        </View>
+                        <Iconn name="star" size={25} color="grey" />
+                      </Pressable>
                     </View>
-                    <Iconn name="star" size={25} color="grey" /> 
-                  </Pressable>
-                </View>
-              </>)}
+                  </Swipeable>
+                </>)}
 
-            keyExtractor={item => item.id.toString()}
-          />
+              keyExtractor={item => item.id.toString()}
+            />
+          </GestureHandlerRootView>
         )}
-
 
         <RBSheet
           ref={refRBSheet}
@@ -324,7 +387,6 @@ const Tasks = ({ navigation }: Props) => {
             },
             container: {
               height: 80,
-
             }
           }}>
           <AddingTasks
@@ -354,12 +416,15 @@ const Tasks = ({ navigation }: Props) => {
               height: '40%',
             }
           }}>
-          <Editable  starId = {starId} tasks={tasks} setTasks={setTasks} navigation={navigation} star={star} selectedItem={selectedItem} />
+          <Editable starId={starId} tasks={tasks} setTasks={setTasks} navigation={navigation} star={star} selectedItem={selectedItem} />
+
         </RBSheet>
+
       </ScrollView>
 
       <View
         style={styles.addicon}>
+
         <Pressable
           onPress={() => {
             if (refRBSheet?.current) {
@@ -367,9 +432,12 @@ const Tasks = ({ navigation }: Props) => {
               setIsRBSheetOpen(true)
             }
           }}>
-         <Plusicon name="pluscircle" size={45} color="#cec9fc" style = {{shadowColor: '#444167',elevation: 6, shadowOpacity: 0.6,
-    shadowRadius: 20}}/>
+          <Plusicon name="pluscircle" size={45} color="#cec9fc" style={{
+            shadowColor: '#444167', elevation: 6, shadowOpacity: 0.6,
+            shadowRadius: 20
+          }} />
         </Pressable>
+
       </View>
 
     </>
@@ -382,13 +450,13 @@ const styles = StyleSheet.create({
     height: 20,
     marginRight: 13,
   },
-  completedlistlength:{
-    flexDirection: 'row', 
-    alignItems: 'center', 
+  completedlistlength: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 7
   },
-  icontextcontainer:{
-    flexDirection: 'row', 
+  icontextcontainer: {
+    flexDirection: 'row',
     alignItems: 'flex-end'
   },
   taskContainer: {
@@ -407,8 +475,8 @@ const styles = StyleSheet.create({
     width: '70%', // Set the width of the modal
     maxWidth: 300, // Set the maximum width of the modal
   },
-  flatlistitem:{
-    flexDirection: 'row', 
+  flatlistitem: {
+    flexDirection: 'row',
     justifyContent: 'center'
   },
   icons: {
@@ -433,7 +501,7 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     width: '100%'
   },
-  addicon:{
+  addicon: {
     position: 'absolute',
     bottom: 7,
     right: 7,
