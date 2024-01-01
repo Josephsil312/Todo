@@ -39,6 +39,8 @@ export interface HeadingTextProps {
   right?:number;
   bottom?:number;
   style?:object;
+  onPress?: () => void;
+  ref?:any;
 }
 
 export interface TextInputProps {
@@ -67,6 +69,7 @@ export interface TextInputProps {
   onSubmitEditing?: () => void;
   marginTop?: number;
   marginBottom?: number;
+  
 }
 
 export type GroupStepProps = {

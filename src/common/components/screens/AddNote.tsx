@@ -5,7 +5,7 @@ const AddNote = ({route}:any) => {
 
   return (
     <View>
-      <Text>{route.params.selectedItem}</Text>
+      <Text>hii</Text>
     </View>
   )
 }

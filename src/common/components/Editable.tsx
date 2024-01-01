@@ -1,26 +1,26 @@
 import React, { useState } from 'react';
-import { View, StyleSheet} from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { HeadingText } from '../../common/Texts';
 import { TextInputSingleLine } from '../../styled';
 import Iconn from 'react-native-vector-icons/EvilIcons'
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Iconfont from 'react-native-vector-icons/Fontisto';
 import DateIcon from 'react-native-vector-icons/Fontisto';
+import { useTasks } from '../TasksContextProvider';
+import Iconfromentypo from 'react-native-vector-icons/Entypo';
+import { useNavigation } from '@react-navigation/native';
 
-import Iconfromentypo from 'react-native-vector-icons/Entypo'
 const Editable = (props: any) => {
-    console.log('linethrough',props.lineThrough)
     const [editedText, setEditedText] = useState(props.selectedItem);
-    const selectedStarId = props.starId;
+    const { allTasks, setAllTasks } = useTasks();
     const handleTextChange = (text: string) => {
         setEditedText(text);
     };
-  
+    const { starId } = props;
+    const navigation = useNavigation();
     return (
         <>
             <View style={styles.container}>
-                {/* Render your Editable screen with the selected item data */}
-                {/* <Text style = {styles.task}>{taskItem.name}</Text> */}
                 <View style={styles.taskContainer}>
                     <View style={styles.editablecontainer}>
                         <Icon name="circle-thin" size={22} color="grey" />
@@ -34,16 +34,13 @@ const Editable = (props: any) => {
                             style={{ textDecorationLine: props.lineThrough ? 'none' : 'line-through' }}
                         />
                     </View>
-                    {selectedStarId && (
-                        <View>
-                            {props.star[selectedStarId] ? (
-                                <Iconfromentypo name="star" size={22} color="#f5eb05" />
-                            ) : (
-                                <Iconn name="star" size={25} color="grey" />
-                            )}
-                        </View>
+                    {starId && (
+                        <Iconfromentypo
+                            name="star"
+                            size={22}
+                            style={{color:allTasks.find((task) => task.id === starId)?.isImportant ? '#f5eb05' : 'grey'}}
+                        />
                     )}
-
                 </View>
                 <View style={styles.secondContainer}>
                     <View style={styles.addtomyday}>
@@ -72,14 +69,15 @@ const Editable = (props: any) => {
                     </View>
                 </View>
                 <View style={styles.notes}>
-                <TextInputSingleLine
-                            onChangeText={() => {}}
-                            multipleLine={6}
-                            placeholder={'Add task'}
-                            maxLength={256}
-                            color={'grey'}
-                            ref={props.inputRef}
+                    <Pressable >
+                        <HeadingText
+                            textString={'Add Note'}
+                            fontSize={16}
+                            fontWeight="500"
+                            fontFamily="SuisseIntl"
                         />
+                    </Pressable>
+
                 </View >
             </View>
         </>
@@ -91,11 +89,11 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
     },
-    editablecontainer:{
-        flexDirection: 'row', 
-        width: 110, 
-        justifyContent: 'space-between', 
-        alignItems: 'center' 
+    editablecontainer: {
+        flexDirection: 'row',
+        width: 110,
+        justifyContent: 'space-between',
+        alignItems: 'center'
     },
     taskContainer: {
         elevation: 8,

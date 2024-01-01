@@ -8,14 +8,22 @@ import {NavigationContainer, useRoute} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import AddNote from '../common/components/screens/AddNote';
 import React from 'react';
+import TasksContextProvider, { useTasks } from '../common/TasksContextProvider';
+import LeftChevron from 'react-native-vector-icons/AntDesign';
 const Stack = createNativeStackNavigator();
 function HomeScreenNavigator(props:any): JSX.Element {
   type RouteParams = {
     selectedItem?: string; // Adjust the type as needed
     navigation?: any;
   };
+  const getSelectedItem = () => {
+    const { selectedItem } = useTasks();
+    return selectedItem;
+  };
   return (
+    <TasksContextProvider>
     <NavigationContainer>
+      
       <View style={{flex: 1}}>
         <Stack.Navigator initialRouteName="Home">
           <Stack.Screen
@@ -42,7 +50,7 @@ function HomeScreenNavigator(props:any): JSX.Element {
                     navigation.goBack();
                   }}
                 >
-                  <Image source={require('../../assets/images/chevron_left.png')} style={{ width: 23, height: 23,marginRight:20 }} />
+                  <LeftChevron name="left" size={22} color="grey" style={{ color: 'white',marginRight:20 }}   />
                 </Pressable>
               ),
             })}
@@ -102,10 +110,11 @@ function HomeScreenNavigator(props:any): JSX.Element {
               headerTitle: 'Important',
               headerTitleStyle: {
                 fontWeight: '200',
-                fontSize: 25
+                fontSize: 25,
+                color:'#971c3d'
               },
               headerStyle: {
-                backgroundColor: '#56101A', 
+                backgroundColor: '#ffcbd8', 
               },
               headerTintColor: '#fff',
               headerLeft: () => (
@@ -114,7 +123,7 @@ function HomeScreenNavigator(props:any): JSX.Element {
                     navigation.goBack();
                   }}
                 >
-                  <Image source={require('../../assets/images/chevron_left.png')} style={{ width: 23, height: 23,marginRight:20 }} />
+                  <LeftChevron name="left" size={22} color="grey" style={{ color: '#971c3d',marginRight:20 }}   />
                 </Pressable>
               ),
             })}
@@ -122,8 +131,8 @@ function HomeScreenNavigator(props:any): JSX.Element {
            <Stack.Screen
             name="Add Note"
             component={AddNote}
-            options={({ route, navigation }: { route: { params?: RouteParams }; navigation: any }) => ({
-              headerTitle:  'Add Note',
+            options={({ navigation}) => ({
+              headerTitle: getSelectedItem() ?? 'Add Note',
               headerTitleStyle: {
                 fontWeight: '200',
                 fontSize: 25,
@@ -146,7 +155,9 @@ function HomeScreenNavigator(props:any): JSX.Element {
           />
         </Stack.Navigator>
       </View>
+  
     </NavigationContainer>
+    </TasksContextProvider>
   );
 }
 

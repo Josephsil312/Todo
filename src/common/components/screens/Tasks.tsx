@@ -11,7 +11,7 @@ import {
   Text,
   LayoutAnimation
 } from 'react-native';
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import { HeadingText } from '../../Texts';
@@ -23,8 +23,9 @@ import Iconn from 'react-native-vector-icons/EvilIcons'
 import Iconfromentypo from 'react-native-vector-icons/Entypo'
 import Iconchev from 'react-native-vector-icons/Entypo'
 import Plusicon from 'react-native-vector-icons/AntDesign';
-import { Swipeable, GestureHandlerRootView } from 'react-native-gesture-handler';
-
+import { RectButton, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useTasks } from '../../TasksContextProvider';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
@@ -35,26 +36,9 @@ const Tasks = ({ navigation }: Props) => {
   const refRBSheet = useRef<RBSheet>(null);
   const refEditableTask = useRef<RBSheet>(null);
   const [task, setTask] = useState('');
-  const [star, setStar] = useState<Record<string, boolean>>({});
   const [isRBSheetOpen, setIsRBSheetOpen] = useState(false);
   const [rotationAnimation] = useState(new Animated.Value(0));
-  const [starId, setStarId] = useState('');
-  const [selectedItem, setSelectedItem] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-  const [tasks, setTasks] = useState<
-    {
-      id: string;
-      name: string;
-    }[]
-  >([]);
-  const [completedTasks, setCompletedTasks] = useState<
-    {
-      id: string;
-      name: string;
-    }[]
-  >([]);
+  const { allTasks, setAllTasks, selectedItem, setSelectedItem, star, starId, setStarId } = useTasks();
   const [showCompletedDropdown, setShowCompletedDropdown] = useState(false);
 
   const Animate = () => {
@@ -72,33 +56,65 @@ const Tasks = ({ navigation }: Props) => {
     });
   }
 
+  const SwipeableRow = ({ item, onDelete }) => {
+    const renderRightActions = (progress, dragX) => {
+      const trans = dragX.interpolate({
+        inputRange: [0, 50, 100, 101],
+        outputRange: [-20, 0, 0, 1],
+      });
+      return (
+        <RectButton style={styles.rightAction} onPress={onDelete}>
+          <Animated.Text
+            style={[
+              styles.actionText,
+              {
+                transform: [{ translateX: trans }],
+              },
+            ]}
+          >
+            Delete
+          </Animated.Text>
+        </RectButton>
+      );
+    };
+  
+    return (
+      <Swipeable renderRightActions={renderRightActions}>
+        <View style={styles.row}>
+          <Text>{item.text}</Text>
+        </View>
+      </Swipeable>
+    );
+  };
+  
 
   const handleAddTask = async () => {
     if (task.trim() !== '') {
       const taskId = Date.now().toString();
-      const newTask = { id: taskId, name: task };
-      const updatedTasks = [...tasks, newTask];
+      const newTask = { id: taskId, name: task, isCompleted: false, isImportant: false };
+      const updatedTasks = [...allTasks, newTask];
       try {
         await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
-        setTasks(updatedTasks);
+        setAllTasks(updatedTasks)
         setTask('');
-
       } catch (error) {
         console.error('Error saving tasks to AsyncStorage:', error);
       }
     }
   };
-
+  //tasks have to be retrieved, assigned to settasks and persisted
   useEffect(() => {
     const loadTasks = async () => {
       try {
         const savedTasks = await AsyncStorage.getItem('tasks');
         if (savedTasks) {
-          const parsedTasks = JSON.parse(savedTasks).map((task: any) => ({
+          const parsedTasks = JSON.parse(savedTasks).map((task) => ({
             ...task,
-            key: task.id, // Assign the id as the key
+            key: task.id,
+            isCompleted: !!task.isCompleted, // Parse completion state
+            isImportant: task.isImportant || false, // Use isStarred for importance
           }));
-          setTasks(parsedTasks);
+          setAllTasks(parsedTasks);
         }
       } catch (error) {
         console.log('Error loading tasks from AsyncStorage:', error);
@@ -107,12 +123,14 @@ const Tasks = ({ navigation }: Props) => {
     loadTasks();
   }, []);
 
+
   const deleteTask = async (id: String) => {
-    const updatedTasks = tasks.filter((task) => task.id !== id);
+    const updatedTasks = allTasks.filter((task) => task.id !== id);
     try {
       await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
       Animate()
-      setTasks(updatedTasks);
+      // setTasks(updatedTasks);
+      setAllTasks(updatedTasks)
       setTask('');
     } catch (error) {
       console.error('Error saving tasks to AsyncStorage:', error);
@@ -121,105 +139,53 @@ const Tasks = ({ navigation }: Props) => {
 
   const handleCompleteTask = async (taskId: string) => {
     try {
-      const completedTask = tasks.find(task => task.id === taskId);
-
-      if (completedTask) {
-        const updatedTasks = tasks.filter(task => task.id !== taskId);
-        const updatedCompletedTasks = [...completedTasks, completedTask];
-        Animate()//animation
-        setTasks(updatedTasks);
-        setCompletedTasks(updatedCompletedTasks);
-        await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
-        await AsyncStorage.setItem(
-          'completedTasks',
-          JSON.stringify(updatedCompletedTasks),
-        );
-      }
+      const updatedTasks = allTasks.map((task) =>
+        task.id === taskId ? { ...task, isCompleted: !task.isCompleted } : task
+      );
+      setAllTasks(updatedTasks);
+      Animate();
+      // Save updated tasks to AsyncStorage
+      await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
     } catch (error) {
       console.log('Error updating task:', error);
     }
   };
 
-  const deleteCompleted = async (id: any) => {
-    const updatedCompletedTasks = completedTasks.filter((task) => task.id !== id)
-    setCompletedTasks(updatedCompletedTasks)
-    Animate()
-    try {
-      await AsyncStorage.setItem(
-        'completedTasks',
-        JSON.stringify(updatedCompletedTasks),
-      );
-    } catch (error) {
-      console.log('Error deleting completed task:', error);
-    }
-  }
-
-  useEffect(() => {
-    const loadCompletedTasks = async () => {
-      try {
-        const savedCompletedTasks = await AsyncStorage.getItem(
-          'completedTasks',
-        );
-        if (savedCompletedTasks) {
-          setCompletedTasks(JSON.parse(savedCompletedTasks));
-        }
-      } catch (error) {
-        console.log('Error loading completed tasks from AsyncStorage:', error);
-      }
-    };
-    loadCompletedTasks();
-  }, []);
-
-  useEffect(() => {
-    const saveCompletedTasks = async () => {
-      try {
-        await AsyncStorage.setItem(
-          'completedTasks',
-          JSON.stringify(completedTasks),
-        );
-      } catch (error) {
-        console.log('Error saving completed tasks to AsyncStorage:', error);
-      }
-    };
-    saveCompletedTasks();
-  }, [completedTasks]);
 
   const toggleCompletedDropdown = () => {
     Animate()
     setShowCompletedDropdown(!showCompletedDropdown);
   };
 
-  const completeTask = async (taskId: string) => {
-    const completedTaskIndex = completedTasks.findIndex(
-      task => task.id === taskId,
-    );
-    if (completedTaskIndex !== -1) {
-      const completedTask = completedTasks[completedTaskIndex];
-      const updatedCompletedTasks = [...completedTasks];
-      updatedCompletedTasks.splice(completedTaskIndex, 1);
+
+  const toggleTask = async (taskId: string) => {
+    try {
+      const updatedTasks = allTasks.map((task) =>
+        task.id === taskId ? { ...task, isCompleted: !task.isCompleted } : task
+      );
+      setAllTasks(updatedTasks);
       Animate()
-      setCompletedTasks(updatedCompletedTasks);
-      setTasks(prevTasks => [...prevTasks, completedTask]);
-      try {
-        await AsyncStorage.setItem(
-          'completedTasks',
-          JSON.stringify(updatedCompletedTasks),
-        );
-        await AsyncStorage.setItem(
-          'tasks',
-          JSON.stringify([...tasks, completedTask]),
-        );
-      } catch (error) {
-        console.log('Error updating AsyncStorage:', error);
-      }
+      // Save updated tasks to AsyncStorage
+      await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
+    } catch (error) {
+      console.log('Error updating task:', error);
     }
   };
 
-  const starChange = (id: string) => {
-    setStar((prevStars) => {
-      const updatedStars = { ...prevStars, [id]: !prevStars[id] };
-      return updatedStars;
-    });
+
+  const starChange = async (taskId: string) => {
+    try {
+      // Directly update the isImportant property within the allTasks array
+      const updatedTasks = allTasks.map((task) =>
+        task.id === taskId ? { ...task, isImportant: !task.isImportant } : task
+      );
+      setAllTasks(updatedTasks);
+      // Save the updated tasks to AsyncStorage
+      await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
+      console.log('Star state and tasks saved to AsyncStorage');
+    } catch (error) {
+      console.error('Error saving star state and tasks:', error);
+    }
   };
 
   useEffect(() => {
@@ -251,37 +217,27 @@ const Tasks = ({ navigation }: Props) => {
   };
 
   const rightSwipe = (id: String) => {
-    
     return (
       <View>
-        <TouchableOpacity onPress = {() =>deleteTask(id)}>
-          <Text>Delete</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-  const rightSwipee = (id: String) => {
-    
-    return (
-      <View>
-        <TouchableOpacity onPress = {() => deleteCompleted(id)}>
+        <TouchableOpacity onPress={() => deleteTask(id)}>
           <Text>Delete</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-
+  console.log('allTasks', allTasks)
   return (
     <>
       <ScrollView style={styles.taskContainer} keyboardShouldPersistTaps='always' ref={scrollViewRef}>
         <GestureHandlerRootView>
           <FlatList
-            data={tasks.filter(task => !completedTasks.some(c => c.id === task.id))}
+            data={allTasks.filter((task) => !task.isCompleted)}
+           
             keyExtractor={item => item.id}
             renderItem={({ item }) => (
               <>
-                <Swipeable renderRightActions={() => rightSwipe(item.id)}>
+                <Swipeable renderRightActions={() => rightSwipe(item.id)} >
                   <View style={styles.flatlistitem}>
                     <Pressable
                       style={styles.incompletetasks}
@@ -289,10 +245,10 @@ const Tasks = ({ navigation }: Props) => {
                     >
                       <View style={styles.icontextcontainer}>
                         <TouchableOpacity onPress={() => handleCompleteTask(item.id)}>
-                          <Icon name="circle-thin" size={22} color="grey" />
+                          <Icon name="circle-thin" size={23} color="grey" />
                         </TouchableOpacity>
                         <HeadingText
-                          textString={item.name}
+                          textString={item.name.trim()}
                           fontSize={16}
                           fontWeight="500"
                           fontFamily="SuisseIntl"
@@ -300,7 +256,7 @@ const Tasks = ({ navigation }: Props) => {
                         />
                       </View>
                       <Pressable key={item.id} onPress={() => starChange(item.id)}>
-                        {star[item.id] ? <Iconfromentypo name="star" size={22} color="grey" style={{ color: '#f5eb05' }} />
+                        {item.isImportant ? <Iconfromentypo name="star" size={22} color="grey" style={{ color: '#7568f8' }} />
                           : <Iconn name="star" size={25} color="grey" />
                         }
                       </Pressable>
@@ -312,29 +268,29 @@ const Tasks = ({ navigation }: Props) => {
           />
         </GestureHandlerRootView>
 
-        {<Text>{completedTasks.length}</Text> &&
-          <Pressable onPress={toggleCompletedDropdown} style={styles.completedlistlength}>
-            <Animated.View style={[animatedStyle]}>
-              <Iconchev name="chevron-small-right" size={20} color="white" />
-            </Animated.View>
-            <HeadingText
-              textString={`Completed ${completedTasks.length}`}
-              fontSize={16}
-              fontWeight="500"
-              fontFamily="SuisseIntl"
-              color='white'
-            ></HeadingText>
-          </Pressable>
-        }
+
+        <Pressable onPress={toggleCompletedDropdown} style={styles.completedlistlength}>
+          <Animated.View style={[animatedStyle]}>
+            <Iconchev name="chevron-small-right" size={20} color="white" />
+          </Animated.View>
+          <HeadingText
+            textString={`Completed ${allTasks.filter((task) => task.isCompleted).length}`}
+            fontSize={16}
+            fontWeight="500"
+            fontFamily="SuisseIntl"
+            color='white'
+          ></HeadingText>
+        </Pressable>
+
 
         {showCompletedDropdown && (
           <GestureHandlerRootView>
             <FlatList
               style={{ marginBottom: 10 }}
-              data={completedTasks}
+              data={allTasks.filter((task) => task.isCompleted)}
               renderItem={({ item }) => (
                 <>
-                  <Swipeable renderRightActions={() => rightSwipee(item.id)}>
+                  <Swipeable renderRightActions={() => rightSwipe(item.id)}>
                     <View style={styles.flatlistitem}>
                       <Pressable
                         key={item.id}
@@ -343,7 +299,7 @@ const Tasks = ({ navigation }: Props) => {
                       >
                         <View style={{ flexDirection: 'row', marginLeft: -2.5 }}>
                           <TouchableOpacity onPress={() => {
-                            completeTask(item.id);
+                            toggleTask(item.id);
                           }}>
                             <Image
                               source={require('../../../../assets/images/checkedCircle.png')}
@@ -351,7 +307,7 @@ const Tasks = ({ navigation }: Props) => {
                             />
                           </TouchableOpacity>
                           <HeadingText
-                            textString={item.name}
+                            textString={item.name.trim()}
                             fontSize={16}
                             fontWeight="500"
                             fontFamily="SuisseIntl"
@@ -359,7 +315,11 @@ const Tasks = ({ navigation }: Props) => {
                             marginLeft={7}
                           />
                         </View>
-                        <Iconn name="star" size={25} color="grey" />
+                        <Pressable key={item.id} onPress={() => starChange(item.id)}>
+                          {item.isImportant ? <Iconfromentypo name="star" size={22} color="grey" style={{ color: '#7568f8' }} />
+                            : <Iconn name="star" size={25} color="grey" />
+                          }
+                        </Pressable>
                       </Pressable>
                     </View>
                   </Swipeable>
@@ -416,7 +376,7 @@ const Tasks = ({ navigation }: Props) => {
               height: '40%',
             }
           }}>
-          <Editable starId={starId} tasks={tasks} setTasks={setTasks} navigation={navigation} star={star} selectedItem={selectedItem} />
+          <Editable star={star} tasks={allTasks} navigation={navigation} selectedItem={selectedItem} starId={starId} />
 
         </RBSheet>
 
@@ -432,9 +392,9 @@ const Tasks = ({ navigation }: Props) => {
               setIsRBSheetOpen(true)
             }
           }}>
-          <Plusicon name="pluscircle" size={45} color="#cec9fc" style={{
+          <Plusicon name="pluscircle" size={55} color="#cec9fc" style={{
             shadowColor: '#444167', elevation: 6, shadowOpacity: 0.6,
-            shadowRadius: 20
+            shadowRadius: 20,
           }} />
         </Pressable>
 
@@ -450,10 +410,14 @@ const styles = StyleSheet.create({
     height: 20,
     marginRight: 13,
   },
+  separator: {
+    backgroundColor: 'rgb(200, 199, 204)',
+    height: StyleSheet.hairlineWidth,
+  },
   completedlistlength: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 7
+    marginVertical: 10
   },
   icontextcontainer: {
     flexDirection: 'row',
@@ -479,16 +443,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center'
   },
-  icons: {
-
+  row: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  rightAction: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#dd2c00',
+    flex: 1,
+  },
+  actionText: {
+    color: '#fff',
+    fontWeight: '600',
   },
   incompletetasks: {
     elevation: 6,
     paddingVertical: 20,
     paddingHorizontal: 10,
-    borderRadius: 20,
+    borderRadius: 5,
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 2,
     justifyContent: 'space-between',
     flexDirection: 'row',
     shadowColor: '#005F8D',
@@ -517,7 +494,7 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     paddingVertical: 20,
     paddingHorizontal: 10,
-    borderRadius: 20,
+    borderRadius: 5,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 6,
