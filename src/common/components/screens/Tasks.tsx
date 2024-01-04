@@ -9,14 +9,15 @@ import {
   Animated,
   Easing,
   Text,
-  LayoutAnimation
+  LayoutAnimation,
+  useFocusEffect
 } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import { HeadingText } from '../../Texts';
 import AddingTasks from './AddingTasks';
-import { NavigationProp, ParamListBase } from '@react-navigation/native';
+import { NavigationProp, ParamListBase,useIsFocused } from '@react-navigation/native';
 import Editable from '../Editable';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Iconn from 'react-native-vector-icons/EvilIcons'
@@ -40,7 +41,7 @@ const Tasks = ({ navigation }: Props) => {
   const [rotationAnimation] = useState(new Animated.Value(0));
   const { allTasks, setAllTasks, selectedItem, setSelectedItem, star, starId, setStarId } = useTasks();
   const [showCompletedDropdown, setShowCompletedDropdown] = useState(false);
-
+  const isFocused = useIsFocused();
   const Animate = () => {
     LayoutAnimation.configureNext({
       duration: 500,
@@ -226,6 +227,20 @@ const Tasks = ({ navigation }: Props) => {
     );
   }
 
+  // useEffect(() => {
+  //   // Code to execute when the screen is focused
+  //   if (isFocused) {
+  //     // Perform desired actions, such as opening the RBSheet and focusing the input field
+  //     if (refRBSheet?.current) {
+  //       refRBSheet.current.open();
+  //       setIsRBSheetOpen(true);
+  //     }
+  //     if (textInputRef.current) {
+  //       textInputRef.current.focus();
+  //     }
+  //   }
+  // }, [isFocused]); // Only re-run the effect when isFocused changes
+  
   console.log('allTasks', allTasks)
   return (
     <>
