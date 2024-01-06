@@ -10,14 +10,14 @@ import {
   Easing,
   Text,
   LayoutAnimation,
-  useFocusEffect
+  Keyboard
 } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import { HeadingText } from '../../Texts';
 import AddingTasks from './AddingTasks';
-import { NavigationProp, ParamListBase,useIsFocused } from '@react-navigation/native';
+import { NavigationProp, ParamListBase, useFocusEffect } from '@react-navigation/native';
 import Editable from '../Editable';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Iconn from 'react-native-vector-icons/EvilIcons'
@@ -27,6 +27,7 @@ import Plusicon from 'react-native-vector-icons/AntDesign';
 import { RectButton, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTasks } from '../../TasksContextProvider';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
+
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
@@ -41,7 +42,6 @@ const Tasks = ({ navigation }: Props) => {
   const [rotationAnimation] = useState(new Animated.Value(0));
   const { allTasks, setAllTasks, selectedItem, setSelectedItem, star, starId, setStarId } = useTasks();
   const [showCompletedDropdown, setShowCompletedDropdown] = useState(false);
-  const isFocused = useIsFocused();
   const Animate = () => {
     LayoutAnimation.configureNext({
       duration: 500,
@@ -78,7 +78,7 @@ const Tasks = ({ navigation }: Props) => {
         </RectButton>
       );
     };
-  
+
     return (
       <Swipeable renderRightActions={renderRightActions}>
         <View style={styles.row}>
@@ -87,15 +87,16 @@ const Tasks = ({ navigation }: Props) => {
       </Swipeable>
     );
   };
-  
+
 
   const handleAddTask = async () => {
     if (task.trim() !== '') {
       const taskId = Date.now().toString();
       const newTask = { id: taskId, name: task, isCompleted: false, isImportant: false };
-      const updatedTasks = [...allTasks, newTask];
+      const updatedTasks = [newTask, ...allTasks];
       try {
         await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
+        Animate()
         setAllTasks(updatedTasks)
         setTask('');
       } catch (error) {
@@ -227,28 +228,33 @@ const Tasks = ({ navigation }: Props) => {
     );
   }
 
-  // useEffect(() => {
-  //   // Code to execute when the screen is focused
-  //   if (isFocused) {
-  //     // Perform desired actions, such as opening the RBSheet and focusing the input field
-  //     if (refRBSheet?.current) {
-  //       refRBSheet.current.open();
-  //       setIsRBSheetOpen(true);
-  //     }
-  //     if (textInputRef.current) {
-  //       textInputRef.current.focus();
-  //     }
-  //   }
-  // }, [isFocused]); // Only re-run the effect when isFocused changes
-  
+  const closeRBSheet = () => {
+    if (refEditableTask?.current) {
+      refEditableTask.current.close();
+      setIsRBSheetOpen(false);
+    }
+  };
+
+
+
   console.log('allTasks', allTasks)
+
   return (
-    <>
+    <>{isRBSheetOpen &&
+
+      <View
+        style={{
+          ...StyleSheet.absoluteFillObject,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)', // Adjust the alpha value for the darkness level
+          zIndex: 1,
+        }}
+      />
+    }
       <ScrollView style={styles.taskContainer} keyboardShouldPersistTaps='always' ref={scrollViewRef}>
         <GestureHandlerRootView>
           <FlatList
             data={allTasks.filter((task) => !task.isCompleted)}
-           
+
             keyExtractor={item => item.id}
             renderItem={({ item }) => (
               <>
@@ -352,6 +358,7 @@ const Tasks = ({ navigation }: Props) => {
           animationType="fade"
           height={70}
           isOpen={isRBSheetOpen}
+          onClose={closeRBSheet}
           customStyles={{
             wrapper: {
               backgroundColor: 'transparent',
@@ -369,6 +376,7 @@ const Tasks = ({ navigation }: Props) => {
             task={task}
             setTask={setTask}
             inputRef={textInputRef}
+            color={'#7568f8'}
           />
         </RBSheet>
 
@@ -402,6 +410,7 @@ const Tasks = ({ navigation }: Props) => {
 
         <Pressable
           onPress={() => {
+
             if (refRBSheet?.current) {
               refRBSheet.current.open();
               setIsRBSheetOpen(true)

@@ -1,5 +1,5 @@
-import { StyleSheet, View, TouchableOpacity,FlatList, Pressable, ScrollView,LayoutAnimation } from 'react-native';
-import React, { useRef, useState,useEffect } from 'react';
+import { StyleSheet, View, TouchableOpacity, FlatList, Pressable, ScrollView, LayoutAnimation } from 'react-native';
+import React, { useRef, useState, useEffect } from 'react';
 import { NavigationProp, ParamListBase } from '@react-navigation/native';
 import { useTasks } from '../../TasksContextProvider';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -15,12 +15,12 @@ interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
 const Important = ({ navigation }: Props) => {
-  const { allTasks, setAllTasks} = useTasks();
+  const { allTasks, setAllTasks } = useTasks();
   const refRBSheet = useRef<RBSheet>(null);
   const [isRBSheetOpen, setIsRBSheetOpen] = useState(false);
   const textInputRef = useRef(null);
   const [task, setTask] = useState('');
-
+ 
   const Animate = () => {
     LayoutAnimation.configureNext({
       duration: 500,
@@ -40,9 +40,10 @@ const Important = ({ navigation }: Props) => {
     if (task.trim() !== '') {
       const taskId = Date.now().toString();
       const newTask = { id: taskId, name: task, isCompleted: false, isImportant: true }; // Set isImportant to true
-      const updatedTasks = [...allTasks, newTask];
+      const updatedTasks = [newTask, ...allTasks];
       try {
         await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
+        Animate();
         setAllTasks(updatedTasks);
         setTask('');
       } catch (error) {
@@ -70,7 +71,7 @@ const Important = ({ navigation }: Props) => {
     };
     loadTasks();
   }, []);
-  
+
   const filteredImportantTasks = allTasks.filter(task => task.isImportant && task.isCompleted === false);
 
   const backToTask = async (id) => {
@@ -78,7 +79,7 @@ const Important = ({ navigation }: Props) => {
     if (pushBackToTask.length > 0) {
       const newTask = { ...pushBackToTask[0], isImportant: false }; // Update isImportant to false
       const updatedTasks = [...allTasks.filter((task) => task.id !== id), newTask];
-      
+
       try {
         await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
         setAllTasks(updatedTasks);
@@ -88,7 +89,7 @@ const Important = ({ navigation }: Props) => {
       }
     }
   };
-  
+
   const backToCompleted = async (id) => {
     const pushBackToTask = allTasks.filter((task) => task.id === id);
     if (pushBackToTask.length > 0) {
@@ -104,10 +105,25 @@ const Important = ({ navigation }: Props) => {
       }
     }
   };
-  
+
+  const closeRBSheet = () => {
+    if (refRBSheet?.current) {
+      refRBSheet.current.close();
+      setIsRBSheetOpen(false);
+    }
+  };
   return (
     <>
+      {isRBSheetOpen &&
 
+        <View
+          style={{
+            ...StyleSheet.absoluteFillObject,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', // Adjust the alpha value for the darkness level
+            zIndex: 1,
+          }}
+        />
+      }
       <ScrollView style={styles.taskContainer} keyboardShouldPersistTaps='always'>
         <FlatList data={filteredImportantTasks} keyExtractor={item => item.id} renderItem={({ item }) => (
           <>
@@ -116,7 +132,7 @@ const Important = ({ navigation }: Props) => {
                 style={styles.incompletetasks}
               >
                 <View style={styles.icontextcontainer}>
-                  <TouchableOpacity onPress={() => {backToCompleted(item.id)}}>
+                  <TouchableOpacity onPress={() => { backToCompleted(item.id) }}>
                     <Icon name="circle-thin" size={23} color="grey" />
                   </TouchableOpacity>
                   <HeadingText
@@ -127,9 +143,9 @@ const Important = ({ navigation }: Props) => {
                     marginLeft={10}
                   />
                 </View>
-    
-                <Iconfromentypo name="star" size={22} color="grey" style={{ color: '#971c3d' }} onPress = {() => backToTask(item.id)}/>
-                          
+
+                <Iconfromentypo name="star" size={22} color="grey" style={{ color: '#971c3d' }} onPress={() => backToTask(item.id)} />
+
               </Pressable>
             </View>
           </>
@@ -157,6 +173,7 @@ const Important = ({ navigation }: Props) => {
         animationType="fade"
         height={70}
         isOpen={isRBSheetOpen}
+        onClose={closeRBSheet}
         customStyles={{
           wrapper: {
             backgroundColor: 'transparent',
@@ -174,6 +191,7 @@ const Important = ({ navigation }: Props) => {
           task={task}
           setTask={setTask}
           inputRef={textInputRef}
+          color={'#971c3d'}
         />
       </RBSheet>
     </>
