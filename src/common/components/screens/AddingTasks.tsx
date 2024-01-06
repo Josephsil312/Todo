@@ -10,6 +10,7 @@ const AddingTasks = (props: {
   task: any;
   inputRef: any;
   handleAddTask: (() => void) | undefined;
+  color: any;
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [isDueToday, setIsDueToday] = useState(false);
@@ -48,7 +49,7 @@ const AddingTasks = (props: {
           <Pressable onPress={props.handleAddTask} style={styles.addingtaskicon}>
             {
               props.task.trim() !== ''
-                ? <Iconn name="arrow-up-circle" size={30} color="#c880f9" />
+                ? <Iconn name="arrow-up-circle" size={30} color={props.color} />
                 : <Iconn name="arrow-up-circle-outline" size={30} color="grey" />
             }
           </Pressable>
