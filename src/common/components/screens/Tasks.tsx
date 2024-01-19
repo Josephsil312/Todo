@@ -10,7 +10,6 @@ import {
   Easing,
   Text,
   LayoutAnimation,
-  Keyboard
 } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -27,21 +26,21 @@ import Plusicon from 'react-native-vector-icons/AntDesign';
 import { RectButton, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTasks } from '../../TasksContextProvider';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
-
+import { isAfter, isYesterday, subDays, isSameDay, isTomorrow, parse, isBefore, format, startOfToday } from 'date-fns';
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
 
 const Tasks = ({ navigation }: Props) => {
-  const textInputRef = useRef(null);
-  const scrollViewRef = useRef(null);
+
   const refRBSheet = useRef<RBSheet>(null);
   const refEditableTask = useRef<RBSheet>(null);
   const [task, setTask] = useState('');
   const [isRBSheetOpen, setIsRBSheetOpen] = useState(false);
   const [rotationAnimation] = useState(new Animated.Value(0));
-  const { allTasks, setAllTasks, selectedItem, setSelectedItem, star, starId, setStarId } = useTasks();
+  const { dueDate, setDueDate, allTasks, setAllTasks, selectedItem, setSelectedItem, star, starId, setStarId, selectedDueDate, setSelectedDueDate } = useTasks();
   const [showCompletedDropdown, setShowCompletedDropdown] = useState(false);
+
   const Animate = () => {
     LayoutAnimation.configureNext({
       duration: 500,
@@ -88,11 +87,16 @@ const Tasks = ({ navigation }: Props) => {
     );
   };
 
-
   const handleAddTask = async () => {
     if (task.trim() !== '') {
       const taskId = Date.now().toString();
-      const newTask = { id: taskId, name: task, isCompleted: false, isImportant: false };
+      const newTask = {
+        id: taskId,
+        name: task,
+        isCompleted: false,
+        isImportant: false,
+        dateSet: dueDate,
+      };
       const updatedTasks = [newTask, ...allTasks];
       try {
         await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
@@ -126,12 +130,12 @@ const Tasks = ({ navigation }: Props) => {
   }, []);
 
 
+
   const deleteTask = async (id: String) => {
     const updatedTasks = allTasks.filter((task) => task.id !== id);
     try {
       await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
       Animate()
-      // setTasks(updatedTasks);
       setAllTasks(updatedTasks)
       setTask('');
     } catch (error) {
@@ -153,12 +157,10 @@ const Tasks = ({ navigation }: Props) => {
     }
   };
 
-
   const toggleCompletedDropdown = () => {
     Animate()
     setShowCompletedDropdown(!showCompletedDropdown);
   };
-
 
   const toggleTask = async (taskId: string) => {
     try {
@@ -173,7 +175,6 @@ const Tasks = ({ navigation }: Props) => {
       console.log('Error updating task:', error);
     }
   };
-
 
   const starChange = async (taskId: string) => {
     try {
@@ -228,20 +229,10 @@ const Tasks = ({ navigation }: Props) => {
     );
   }
 
-  const closeRBSheet = () => {
-    if (refEditableTask?.current) {
-      refEditableTask.current.close();
-      setIsRBSheetOpen(false);
-    }
-  };
-
-
-
   console.log('allTasks', allTasks)
 
   return (
     <>{isRBSheetOpen &&
-
       <View
         style={{
           ...StyleSheet.absoluteFillObject,
@@ -250,7 +241,7 @@ const Tasks = ({ navigation }: Props) => {
         }}
       />
     }
-      <ScrollView style={styles.taskContainer} keyboardShouldPersistTaps='always' ref={scrollViewRef}>
+      <ScrollView style={styles.taskContainer} keyboardShouldPersistTaps='always'>
         <GestureHandlerRootView>
           <FlatList
             data={allTasks.filter((task) => !task.isCompleted)}
@@ -268,13 +259,47 @@ const Tasks = ({ navigation }: Props) => {
                         <TouchableOpacity onPress={() => handleCompleteTask(item.id)}>
                           <Icon name="circle-thin" size={23} color="grey" />
                         </TouchableOpacity>
-                        <HeadingText
-                          textString={item.name.trim()}
-                          fontSize={16}
-                          fontWeight="500"
-                          fontFamily="SuisseIntl"
-                          marginLeft={10}
-                        />
+                        <View style={{ flexDirection: 'column', marginLeft: 15 }}>
+                          <HeadingText
+                            textString={item.name.trim()}
+                            fontSize={16}
+                            fontWeight="500"
+                            fontFamily="SuisseIntl"
+                          />
+                          {/* {item.dateSet && !item.isCompleted && (
+                            <>
+                            
+                              {isBefore(parse(item.dateSet, 'dd/MM/yyyy', new Date()), startOfToday()) ? (
+                                <Text style={styles.overdueTag}>
+                                {`${format(parse(item.dateSet, 'dd/MM/yyyy', new Date()), 'EEE, MMM d')}`}
+                              </Text>
+                              ) : isSameDay(parse(item.dateSet, 'dd/MM/yyyy', new Date()), startOfToday()) ? (
+                                <Text style={styles.dueTodayTag}>Today</Text>
+                              ) : isTomorrow(parse(item.dateSet, 'dd/MM/yyyy', new Date())) ? (
+                                <Text style={styles.dueTomorrowTag}>Tomorrow</Text>
+                              ) : <Text style={styles.dueTomorrowTag}>{format(parse(item.dateSet, 'dd/MM/yyyy', new Date()), 'EEE, MMM d')}</Text>}
+                            </>
+                          )} */}
+                          {item.dateSet && !item.isCompleted && (
+                            <>
+                              {isBefore(parse(item.dateSet, 'dd/MM/yyyy', new Date()), startOfToday()) ? (
+                                <Text style={styles.overdueTag}>
+                                  {isYesterday(parse(item.dateSet, 'dd/MM/yyyy', new Date())) ? (
+                                    `Yesterday`
+                                  ) : (
+                                    `${format(parse(item.dateSet, 'dd/MM/yyyy', new Date()), 'EEE, MMM d')}`
+                                  )}
+                                </Text>
+                              ) : isSameDay(parse(item.dateSet, 'dd/MM/yyyy', new Date()), startOfToday()) ? (
+                                <Text style={styles.dueTodayTag}>Today</Text>
+                              ) : isTomorrow(parse(item.dateSet, 'dd/MM/yyyy', new Date())) ? (
+                                <Text style={styles.dueTomorrowTag}>Tomorrow</Text>
+                              ) : (
+                                <Text style={styles.dueTomorrowTag}>{format(parse(item.dateSet, 'dd/MM/yyyy', new Date()), 'EEE, MMM d')}</Text>
+                              )}
+                            </>
+                          )}
+                        </View>
                       </View>
                       <Pressable key={item.id} onPress={() => starChange(item.id)}>
                         {item.isImportant ? <Iconfromentypo name="star" size={22} color="grey" style={{ color: '#7568f8' }} />
@@ -289,7 +314,6 @@ const Tasks = ({ navigation }: Props) => {
           />
         </GestureHandlerRootView>
 
-
         <Pressable onPress={toggleCompletedDropdown} style={styles.completedlistlength}>
           <Animated.View style={[animatedStyle]}>
             <Iconchev name="chevron-small-right" size={20} color="white" />
@@ -302,7 +326,6 @@ const Tasks = ({ navigation }: Props) => {
             color='white'
           ></HeadingText>
         </Pressable>
-
 
         {showCompletedDropdown && (
           <GestureHandlerRootView>
@@ -358,7 +381,7 @@ const Tasks = ({ navigation }: Props) => {
           animationType="fade"
           height={70}
           isOpen={isRBSheetOpen}
-          onClose={closeRBSheet}
+          onClose={() => setIsRBSheetOpen(false)}
           customStyles={{
             wrapper: {
               backgroundColor: 'transparent',
@@ -368,17 +391,17 @@ const Tasks = ({ navigation }: Props) => {
 
             },
             container: {
-              height: 80,
+              height: '22%',
             }
           }}>
           <AddingTasks
             handleAddTask={handleAddTask}
             task={task}
             setTask={setTask}
-            inputRef={textInputRef}
             color={'#7568f8'}
           />
         </RBSheet>
+
 
         <RBSheet
           ref={refEditableTask}
@@ -387,6 +410,7 @@ const Tasks = ({ navigation }: Props) => {
           animationType="slide"
           height={70}
           isOpen={isRBSheetOpen}
+          onClose={() => setIsRBSheetOpen(false)}
           customStyles={{
             wrapper: {
               backgroundColor: 'transparent',
@@ -396,7 +420,7 @@ const Tasks = ({ navigation }: Props) => {
 
             },
             container: {
-              height: '40%',
+              height: '35%',
             }
           }}>
           <Editable star={star} tasks={allTasks} navigation={navigation} selectedItem={selectedItem} starId={starId} />
@@ -407,13 +431,11 @@ const Tasks = ({ navigation }: Props) => {
 
       <View
         style={styles.addicon}>
-
         <Pressable
           onPress={() => {
-
             if (refRBSheet?.current) {
               refRBSheet.current.open();
-              setIsRBSheetOpen(true)
+              setIsRBSheetOpen(true);
             }
           }}>
           <Plusicon name="pluscircle" size={55} color="#cec9fc" style={{
@@ -421,7 +443,6 @@ const Tasks = ({ navigation }: Props) => {
             shadowRadius: 20,
           }} />
         </Pressable>
-
       </View>
 
     </>
@@ -434,10 +455,6 @@ const styles = StyleSheet.create({
     height: 20,
     marginRight: 13,
   },
-  separator: {
-    backgroundColor: 'rgb(200, 199, 204)',
-    height: StyleSheet.hairlineWidth,
-  },
   completedlistlength: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -445,7 +462,12 @@ const styles = StyleSheet.create({
   },
   icontextcontainer: {
     flexDirection: 'row',
-    alignItems: 'flex-end'
+    alignItems: 'center',
+  },
+  overdueTag: {
+    color: 'red',
+    fontSize: 13,
+    fontWeight: '400',
   },
   taskContainer: {
     flexGrow: 1,
@@ -463,9 +485,26 @@ const styles = StyleSheet.create({
     width: '70%', // Set the width of the modal
     maxWidth: 300, // Set the maximum width of the modal
   },
+  dueTodayTag: {
+    // Adjust appearance as desired, e.g.,
+    color: '#7568f8',
+    borderRadius: 5,
+    fontSize: 13,
+    fontWeight: '400',
+    width: 'auto'
+  },
+  dueTomorrowTag: {
+    color: '#7568f8',
+    borderRadius: 5,
+    fontSize: 13,
+    fontWeight: '400',
+    width: 'auto'
+  },
+
   flatlistitem: {
     flexDirection: 'row',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    height: 70
   },
   row: {
     backgroundColor: '#fff',
@@ -521,7 +560,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 2,
     justifyContent: 'space-between',
     elevation: 6,
     width: '100%'

@@ -1,39 +1,50 @@
 import { StyleSheet, View, Modal, TouchableWithoutFeedback, Image, TouchableOpacity } from 'react-native'
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { HeadingText } from '../../Texts';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { format, addDays, startOfDay, getDay } from 'date-fns';
+import { useTasks } from '../../TasksContextProvider';
+
 const CustomModal = (props: {
-    setModalVisible: (arg0: any) => any;
-    modalVisible: any;
-    openModal: (() => void) | undefined;
-    closeModal: (() => void) | undefined;
-    isDueToday: boolean;
-    setIsDueToday: (value: boolean) => void;
+    modalVisible: boolean;
+    setModalVisible: any;
+    onDueDateSelected: any;
+    selectedDueDate: any;
+    allTasks: any;
 }) => {
     const [date, setDate] = useState(new Date());
-    const [showPicker, setShowPicker] = useState(false);
-
+    const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+    const { dueDate,setDueDate } = useTasks();
+    const closeModal = () => {
+        props.setModalVisible(false);
+    };
     const showDatePicker = () => {
-        setShowPicker(true);
+        setDatePickerVisibility(true);
     };
 
     const hideDatePicker = () => {
-        setShowPicker(false);
-       
+        setDatePickerVisibility(false);
     };
 
-    const handleDateChange = (event: { type: string; }, selectedDate: any) => {
-        if (event.type === 'set') {
-            // Update state or perform actions
-            setDate(selectedDate || date);
-        } else if (event.type === 'dismissed') {
-            // Handle dismissal, e.g., hide the picker
-            hideDatePicker();
-            
-        }
+    const handleConfirm = (date) => {
+        console.warn("A date has been picked: ", date);
+        hideDatePicker();
+        const formattedDate = format(date, 'dd/MM/yyyy');
+        setDueDate(formattedDate)
+        closeModal();
     };
 
+    // // Get today's date and format it to 'MM/DD/YYYY'
+    // const formattedToday = format(new Date(), 'MM/DD/YYYY');
+
+    // // Get tomorrow's date, format it to 'MM/DD/YYYY'
+    // const formattedTomorrow = format(addDays(new Date(), 1), 'MM/DD/YYYY');
+
+    // // Get today's day name (e.g., 'Wednesday')
+    // const todayy = format(startOfDay(new Date()), 'dddd');
+
+    // // Get tomorrow's day name
+    // const tomorroww = format(startOfDay(addDays(new Date(), 1)), 'dddd');
     const formatDateToDayOfWeek = (selectedDate: any) => {
         const options = { weekday: 'long' };
         const dayOfWeek = selectedDate?.toLocaleDateString('en-US', options);
@@ -46,57 +57,8 @@ const CustomModal = (props: {
     const tomorrow = new Date(today);
 
     tomorrow.setDate(today.getDate() + 1);
-
-    const isToday = (selectedDate: Date) => {
-        const todaydate = selectedDate.getDate();
-        console.log('clicked today', todaydate)
-        toggleFeature()
-        return (
-            selectedDate.getDate() === today.getDate() &&
-            selectedDate.getMonth() === today.getMonth() &&
-            selectedDate.getFullYear() === today.getFullYear()
-        );
-    };
-
-    const isTomorrow = (selectedDate: Date) => {
-        selectedDate = tomorrow
-        console.log('clickec tomorrow', selectedDate)
-        return (
-            selectedDate.getDate() === tomorrow.getDate() &&
-            selectedDate.getMonth() === tomorrow.getMonth() &&
-            selectedDate.getFullYear() === tomorrow.getFullYear()
-        );
-    };
-
-    useEffect(() => {
-        loadIsDueTodayStatus();
-    }, [])
-
-    const loadIsDueTodayStatus = async () => {
-        try {
-            const storedValue = await AsyncStorage.getItem('isDueToday');
-            if (storedValue !== null) {
-                props.setIsDueToday(JSON.parse(storedValue))
-            }
-        } catch (error) {
-            console.error('Error loading isduetoday', error)
-        }
-    }
-
-    const saveIsDueTodayStatus = async (value: any) => {
-        try {
-            await AsyncStorage.setItem('isDueToday', JSON.stringify(value))
-        } catch (error) {
-            console.error('Error saving isduetoday', error)
-        }
-    }
-
-    const toggleFeature = () => {
-        const newValue = !(props.isDueToday);
-        props.setIsDueToday(newValue)
-        saveIsDueTodayStatus(newValue)
-    }
-
+    const formattedToday = format(today, 'dd/MM/yyyy'); // Note the capitalization for month
+    const formattedTomorrow = format(tomorrow,'dd/MM/yyyy')
     return (
         <View>
             <Modal
@@ -105,12 +67,12 @@ const CustomModal = (props: {
                 visible={props.modalVisible}
                 onRequestClose={() => {
                     props.setModalVisible(false);
-                    
+
                 }}>
-                <TouchableWithoutFeedback onPress={props.closeModal}>
+                <TouchableWithoutFeedback onPress={closeModal}>
                     <View style={styles.centeredView}>
                         <View style={styles.modalView}>
-                            <TouchableOpacity onPress={() => isToday(date)}>
+                            <TouchableOpacity onPress={() => props.onDueDateSelected('Due Today', formattedToday)}>
                                 <View style={styles.modalcontainer}>
                                     <Image source={require('../../../../assets/images/today.png')} style={{ marginVertical: 10 }} />
                                     <HeadingText
@@ -122,9 +84,11 @@ const CustomModal = (props: {
                                         marginVertical={10}
                                     />
                                 </View>
+
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => {}}>
+                            <TouchableOpacity onPress={() => props.onDueDateSelected('Due Tomorrow', formattedTomorrow)}>
                                 <View style={styles.modalcontainer}>
+
                                     <Image source={require('../../../../assets/images/tomorrow.png')} style={{ marginVertical: 10 }} />
                                     <HeadingText
                                         textString={`Tomorrow (${formatDateToDayOfWeek(tomorrow)})`}
@@ -135,6 +99,7 @@ const CustomModal = (props: {
                                         marginVertical={10}
                                     />
                                 </View>
+
                             </TouchableOpacity>
                             <TouchableOpacity onPress={showDatePicker}>
                                 <View style={styles.modalcontainer}>
@@ -152,16 +117,13 @@ const CustomModal = (props: {
                         </View>
                     </View>
                 </TouchableWithoutFeedback>
-                
-            </Modal> 
-            {showPicker &&
-                <DateTimePicker
-                    value={date}
-                    mode="datetime" // Set the mode to 'date', 'time', or 'datetime'
-                    display="default"
-                    onChange={handleDateChange} />
-            }
-                
+            </Modal>
+            <DateTimePickerModal
+                isVisible={isDatePickerVisible}
+                mode="date"
+                onConfirm={handleConfirm}
+                onCancel={hideDatePicker}
+            />
         </View>
     )
 }
@@ -174,6 +136,12 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
         alignItems: 'flex-start',
 
+    },
+    todayContainer: {
+        backgroundColor: '#f0ffe0', // Green color for Today
+    },
+    tomorrowContainer: {
+        backgroundColor: '#f8f8f8', // Light grey color for Tomorrow
     },
     modalView: {
         margin: 10,
@@ -205,16 +173,9 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
     },
-    absolute: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        bottom: 0,
-        right: 0,
-    },
-    modalcontainer:{
+    modalcontainer: {
         flexDirection: 'row',
-        justifyContent: 'center', 
-        alignItems: 'center' 
+        justifyContent: 'center',
+        alignItems: 'center'
     }
 });

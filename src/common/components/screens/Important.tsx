@@ -15,12 +15,12 @@ interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
 const Important = ({ navigation }: Props) => {
+
   const { allTasks, setAllTasks } = useTasks();
   const refRBSheet = useRef<RBSheet>(null);
   const [isRBSheetOpen, setIsRBSheetOpen] = useState(false);
-  const textInputRef = useRef(null);
   const [task, setTask] = useState('');
- 
+  const refEditableTask = useRef<RBSheet>(null);
   const Animate = () => {
     LayoutAnimation.configureNext({
       duration: 500,
@@ -41,6 +41,7 @@ const Important = ({ navigation }: Props) => {
       const taskId = Date.now().toString();
       const newTask = { id: taskId, name: task, isCompleted: false, isImportant: true }; // Set isImportant to true
       const updatedTasks = [newTask, ...allTasks];
+      console.log('opened handleAddTask onpress')
       try {
         await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
         Animate();
@@ -106,16 +107,10 @@ const Important = ({ navigation }: Props) => {
     }
   };
 
-  const closeRBSheet = () => {
-    if (refRBSheet?.current) {
-      refRBSheet.current.close();
-      setIsRBSheetOpen(false);
-    }
-  };
+
   return (
     <>
       {isRBSheetOpen &&
-
         <View
           style={{
             ...StyleSheet.absoluteFillObject,
@@ -150,22 +145,9 @@ const Important = ({ navigation }: Props) => {
             </View>
           </>
         )} />
-      </ScrollView>
-      <View
-        style={styles.addicon}>
 
-        <Pressable onPress={() => {
-          if (refRBSheet?.current) {
-            refRBSheet.current.open();
-            setIsRBSheetOpen(true)
-          }
-        }}>
-          <Plusicon name="pluscircle" size={55} color="#971c3d" style={{
-            shadowColor: '#444167', elevation: 6, shadowOpacity: 0.6,
-            shadowRadius: 20
-          }} />
-        </Pressable>
-      </View>
+      </ScrollView>
+
       <RBSheet
         ref={refRBSheet}
         closeOnDragDown={false}
@@ -173,7 +155,7 @@ const Important = ({ navigation }: Props) => {
         animationType="fade"
         height={70}
         isOpen={isRBSheetOpen}
-        onClose={closeRBSheet}
+        onClose={() => setIsRBSheetOpen(false)}
         customStyles={{
           wrapper: {
             backgroundColor: 'transparent',
@@ -183,17 +165,37 @@ const Important = ({ navigation }: Props) => {
 
           },
           container: {
-            height: 80,
+            height: '15%',
           }
         }}>
         <AddingTasks
           handleAddTask={handleAddTask}
           task={task}
           setTask={setTask}
-          inputRef={textInputRef}
-          color={'#971c3d'}
+          color={'#7568f8'}
         />
       </RBSheet>
+      <View style={styles.addicon}>
+        <Plusicon
+          name="pluscircle"
+          size={55}
+          color="#971c3d"
+          style={{
+            shadowColor: '#444167',
+            elevation: 6,
+            shadowOpacity: 0.6,
+            shadowRadius: 20,
+          }}
+          onPress={() => {
+            if (refRBSheet?.current) {
+              refRBSheet.current.open();
+              setIsRBSheetOpen(true);
+              console.log('opened RBsheet onpress')
+            }
+          }}
+        />
+      </View>
+
     </>
   );
 };

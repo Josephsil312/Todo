@@ -38,7 +38,9 @@ export const HeadingText: React.FC<HeadingTextProps> = ({
   left,
   bottom,
   right,
-  style
+  style,
+  alignItems,
+  children
 }) => {
   return (
     <HeadingTextStyle
@@ -52,6 +54,7 @@ export const HeadingText: React.FC<HeadingTextProps> = ({
       marginLeft={marginLeft}
       marginRight={marginRight}
       paddingTop={paddingTop}
+      alignItems={alignItems}
       marginBottom={marginBottom}
       padding={padding}
       backgroundColor={backgroundColor}
@@ -80,6 +83,7 @@ export const HeadingText: React.FC<HeadingTextProps> = ({
       style={style}
       visible={visible}>
       {textString}
+      {children}
     </HeadingTextStyle>
   );
 };

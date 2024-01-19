@@ -7,7 +7,7 @@ export type Task = {
     id: string;
     name: string;
     isCompleted: boolean;
-  isImportant: boolean;
+    isImportant: boolean;
 }
 
 type TasksContextType = {
@@ -27,6 +27,10 @@ type TasksContextType = {
     setAllTasks: React.Dispatch<React.SetStateAction<Task[]>>;
     currentTaskName:String;
     setCurrentTaskName:any;
+    selectedDueDate:any;
+    setSelectedDueDate:any;
+    dueDate:String;
+    setDueDate:any;
   };
 
 const TasksContextProvider = ({ children }: PropsWithChildren<{}>) => {
@@ -41,9 +45,10 @@ const TasksContextProvider = ({ children }: PropsWithChildren<{}>) => {
       } | null>(null);
       const [star, setStar] = useState<Task[]>([]);
       const [starredTasks, setStarredTasks] = useState<Task[]>([]);
-
+      const [selectedDueDate, setSelectedDueDate] = useState('');
+      const [dueDate,setDueDate] = useState('')
     return (
-        <TasksContext.Provider value={{ currentTaskName,setCurrentTaskName,allTasks,setAllTasks,setStarredTasks,starredTasks,star,setStar,tasks,setTasks,completedTasks,setCompletedTasks,starId,setStarId,selectedItem,setSelectedItem }}>
+        <TasksContext.Provider value={{ dueDate,setDueDate,selectedDueDate,setSelectedDueDate,currentTaskName,setCurrentTaskName,allTasks,setAllTasks,setStarredTasks,starredTasks,star,setStar,tasks,setTasks,completedTasks,setCompletedTasks,starId,setStarId,selectedItem,setSelectedItem }}>
             {children}
         </TasksContext.Provider>
     )

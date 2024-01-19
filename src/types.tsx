@@ -1,6 +1,11 @@
+import React from 'react';
+// ... other imports
+
+
 export interface HeadingTextProps {
   textString?: string | number | boolean;
   flexDirection?: string;
+  children?: React.ReactNode;
   marginBottom?: number;
   marginTop?: number;
   marginLeft?: string | number;
@@ -23,6 +28,7 @@ export interface HeadingTextProps {
   lineHeight?: string;
   multiline?: boolean;
   fontStyle?: string;
+  alignItems?:string;
   includeFontPadding?: boolean;
   top?: number;
   alignSelf?: string;
