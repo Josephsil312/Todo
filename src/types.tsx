@@ -75,7 +75,7 @@ export interface TextInputProps {
   onSubmitEditing?: () => void;
   marginTop?: number;
   marginBottom?: number;
-  
+  returnKeyType?:string;
 }
 
 export type GroupStepProps = {

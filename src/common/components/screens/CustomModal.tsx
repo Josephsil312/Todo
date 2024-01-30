@@ -4,7 +4,9 @@ import { HeadingText } from '../../Texts';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { format, addDays, startOfDay, getDay } from 'date-fns';
 import { useTasks } from '../../TasksContextProvider';
-
+import CalendarToday from 'react-native-vector-icons/AntDesign'
+import CalendarTomorrow from 'react-native-vector-icons/FontAwesome';
+import CalendarPick from 'react-native-vector-icons/FontAwesome';
 const CustomModal = (props: {
     modalVisible: boolean;
     setModalVisible: any;
@@ -14,7 +16,7 @@ const CustomModal = (props: {
 }) => {
     const [date, setDate] = useState(new Date());
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
-    const { dueDate,setDueDate } = useTasks();
+    const { dueDate, setDueDate } = useTasks();
     const closeModal = () => {
         props.setModalVisible(false);
     };
@@ -27,29 +29,18 @@ const CustomModal = (props: {
     };
 
     const handleConfirm = (date) => {
-        console.warn("A date has been picked: ", date);
-        hideDatePicker();
         const formattedDate = format(date, 'dd/MM/yyyy');
+        const formattedDueDateText = `Due on ${format(date, 'EEE, MMM d')}`;
+        props.onDueDateSelected(formattedDueDateText, formattedDate);
+        hideDatePicker();
         setDueDate(formattedDate)
         closeModal();
     };
 
-    // // Get today's date and format it to 'MM/DD/YYYY'
-    // const formattedToday = format(new Date(), 'MM/DD/YYYY');
-
-    // // Get tomorrow's date, format it to 'MM/DD/YYYY'
-    // const formattedTomorrow = format(addDays(new Date(), 1), 'MM/DD/YYYY');
-
-    // // Get today's day name (e.g., 'Wednesday')
-    // const todayy = format(startOfDay(new Date()), 'dddd');
-
-    // // Get tomorrow's day name
-    // const tomorroww = format(startOfDay(addDays(new Date(), 1)), 'dddd');
     const formatDateToDayOfWeek = (selectedDate: any) => {
         const options = { weekday: 'long' };
         const dayOfWeek = selectedDate?.toLocaleDateString('en-US', options);
         return dayOfWeek?.split(',')[0];
-
     };
 
     const today = date;
@@ -58,7 +49,7 @@ const CustomModal = (props: {
 
     tomorrow.setDate(today.getDate() + 1);
     const formattedToday = format(today, 'dd/MM/yyyy'); // Note the capitalization for month
-    const formattedTomorrow = format(tomorrow,'dd/MM/yyyy')
+    const formattedTomorrow = format(tomorrow, 'dd/MM/yyyy')
     return (
         <View>
             <Modal
@@ -74,7 +65,7 @@ const CustomModal = (props: {
                         <View style={styles.modalView}>
                             <TouchableOpacity onPress={() => props.onDueDateSelected('Due Today', formattedToday)}>
                                 <View style={styles.modalcontainer}>
-                                    <Image source={require('../../../../assets/images/today.png')} style={{ marginVertical: 10 }} />
+                                    <CalendarToday name='calendar' size={22} style={{ marginVertical: 10 }} />
                                     <HeadingText
                                         textString={`Today (${formatDateToDayOfWeek(today)})`}
                                         fontSize={16}
@@ -89,7 +80,7 @@ const CustomModal = (props: {
                             <TouchableOpacity onPress={() => props.onDueDateSelected('Due Tomorrow', formattedTomorrow)}>
                                 <View style={styles.modalcontainer}>
 
-                                    <Image source={require('../../../../assets/images/tomorrow.png')} style={{ marginVertical: 10 }} />
+                                    <CalendarTomorrow name = "calendar-plus-o" size = {22} style={{ marginVertical: 10 }} />
                                     <HeadingText
                                         textString={`Tomorrow (${formatDateToDayOfWeek(tomorrow)})`}
                                         fontSize={16}
@@ -103,7 +94,7 @@ const CustomModal = (props: {
                             </TouchableOpacity>
                             <TouchableOpacity onPress={showDatePicker}>
                                 <View style={styles.modalcontainer}>
-                                    <Image source={require('../../../../assets/images/pickdate.png')} style={{ marginVertical: 10 }} />
+                                    <CalendarPick name="calendar-check-o" size={22} style={{ marginVertical: 10 }} />
                                     <HeadingText
                                         textString={`Pick a date`}
                                         fontSize={16}
@@ -144,9 +135,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#f8f8f8', // Light grey color for Tomorrow
     },
     modalView: {
-        margin: 10,
+        marginBottom: '25%',
         backgroundColor: 'white',
         borderRadius: 10,
+        
         padding: 10,
         alignItems: 'flex-start',
         shadowColor: '#000',
@@ -157,10 +149,10 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 4,
         elevation: 5,
-        width: 200,
+        width: 230,
         height: 'auto',
         flexDirection: 'column',
-
+        marginLeft: 20
     },
     dueTodayContainer: {
         backgroundColor: 'purple',

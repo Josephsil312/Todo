@@ -1,29 +1,40 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, TextInput, Pressable } from 'react-native';
 import { HeadingText } from '../../common/Texts';
 import { TextInputSingleLine } from '../../styled';
-import Iconn from 'react-native-vector-icons/EvilIcons'
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Iconfont from 'react-native-vector-icons/Fontisto';
 import DateIcon from 'react-native-vector-icons/Fontisto';
 import { useTasks } from '../TasksContextProvider';
 import Iconfromentypo from 'react-native-vector-icons/Entypo';
-import { useNavigation } from '@react-navigation/native';
+import Remind from 'react-native-vector-icons/AntDesign';
+import { parse, format } from 'date-fns';
+import Cross from 'react-native-vector-icons/Entypo';
+import Iconn from 'react-native-vector-icons/EvilIcons';
 
 const Editable = (props: any) => {
     const [editedText, setEditedText] = useState(props.selectedItem);
-    const { allTasks, setAllTasks } = useTasks();
+    const { allTasks,dueDateAdded } = useTasks()
+    const task = allTasks.find((task) => task.id === props.selectedItem);
+    const dueDateAddedfrom = task?.dueDateAdded;
     const handleTextChange = (text: string) => {
         setEditedText(text);
     };
-    const { starId } = props;
-    const navigation = useNavigation();
+    const { myDayState } = props;
+      
+   
+    
+    // const formattedDueDate = dueDateAddedfrom
+    //     ? `Due ${format(parse(dueDateAddedfrom, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy')}`
+    //     : 'Add due date';
+
+    console.log('dueDateAddedfrom from editable',dueDateAddedfrom)
     return (
         <>
             <View style={styles.container}>
                 <View style={styles.taskContainer}>
                     <View style={styles.editablecontainer}>
-                        <Icon name="circle-thin" size={22} color="grey" />
+                        <Icon name="circle-thin" size={27} color="grey" />
                         <TextInputSingleLine
                             onChangeText={handleTextChange}
                             value={editedText}
@@ -31,54 +42,66 @@ const Editable = (props: any) => {
                             maxLength={256}
                             color={'grey'}
                             ref={props.inputRef}
-                            style={{ textDecorationLine: props.lineThrough ? 'none' : 'line-through' }}
+                            style={{ width: 300 }}
+                            returnKeyType={'done'}
                         />
                     </View>
-                    {starId && (
+                    {/* {starId && (
                         <Iconfromentypo
                             name="star"
                             size={22}
-                            style={{color:allTasks.find((task) => task.id === starId)?.isImportant ? '#f5eb05' : 'grey'}}
+                            style={{ color: allTasks.find((task) => task.id === starId)?.isImportant ? '#f5eb05' : '' }}
                         />
-                    )}
+                    )} */}
+
                 </View>
                 <View style={styles.secondContainer}>
                     <View style={styles.addtomyday}>
-                        <Iconfont name="day-sunny" size={22} color="grey" />
-                        <HeadingText
-                            textString={'Add to My Day'}
-                            fontSize={16}
-                            fontWeight="500"
-                            fontFamily="SuisseIntl"
-                            textDecorationLine="none"
-                            color='#a8afb3'
-                            marginLeft={10}
-                        />
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: 150 }}>
+                            <Iconfont name="day-sunny" size={20} color="grey" />
+                            <HeadingText
+                                textString={myDayState ? 'Added to My Day' : 'Add to My Day'}
+                                fontSize={16}
+                                fontWeight="500"
+                                fontFamily="SuisseIntl"
+                                textDecorationLine="none"
+                                color='#a8afb3'
+                                marginLeft={10}
+                            />
+                        </View>
+                        {myDayState && <Cross name="cross" size={22} color="grey" />}
                     </View>
-                    <View style={styles.addtomyday}>
-                        <DateIcon name="date" size={22} color="grey" />
-                        <HeadingText
-                            textString={'Add due date'}
-                            fontSize={16}
-                            fontWeight="500"
-                            fontFamily="SuisseIntl"
-                            textDecorationLine="none"
-                            color='#a8afb3'
-                            marginLeft={10}
-                        />
+
+                    <View style={styles.addtoduedate}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignContent: 'center', width: 140 }}>
+                            <DateIcon name="date" size={18} color="grey" />
+                            <HeadingText
+                                textString={props.formattedDueDate} // Format due date if present
+                                fontSize={16}
+                                fontWeight="500"
+                                fontFamily="SuisseIntl"
+                                textDecorationLine="none"
+                                color='#a8afb3'
+                                marginLeft={10}
+                            />
+                        </View>
+                    </View>
+                    <View style={styles.addtoduedate} >
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: 125, alignItems: 'center' }}>
+                            <Remind name="retweet" size={20} color="grey" />
+                            <HeadingText
+                                textString={'Remind me'}
+                                fontSize={16}
+                                fontWeight="500"
+                                fontFamily="SuisseIntl"
+                                textDecorationLine="none"
+                                color='#a8afb3'
+                                marginLeft={10}
+                            />
+                        </View>
                     </View>
                 </View>
-                <View style={styles.notes}>
-                    <Pressable >
-                        <HeadingText
-                            textString={'Add Note'}
-                            fontSize={16}
-                            fontWeight="500"
-                            fontFamily="SuisseIntl"
-                        />
-                    </Pressable>
-
-                </View >
+                <TextInput placeholder='Add Note' multiline returnKeyType="done" />
             </View>
         </>
     );
@@ -93,7 +116,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         width: 110,
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
     },
     taskContainer: {
         elevation: 8,
@@ -117,39 +140,28 @@ const styles = StyleSheet.create({
         height: 20,
     },
     addtomyday: {
-        elevation: 6,
-        marginBottom: 6,
-        shadowColor: '#005F8D',
+        elevation: 2,
+        marginVertical: 6,
         backgroundColor: 'white',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.6,
-        height: 60,
+        paddingVertical: 6,
+        height: 50,
         width: '100%',
-        borderBottomColor: '#a8afb3',
-        borderBottomWidth: 1,
+        borderBottomWidth: 0.2,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 10
+        paddingHorizontal: 10,
     },
-    notes: {
-        elevation: 6,
-        marginBottom: 6,
-        shadowColor: '#005F8D',
+    addtoduedate: {
+        elevation: 2,
+        marginVertical: 6,
         backgroundColor: 'white',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.6,
-        height: 60,
+        paddingVertical: 6,
+        height: 50,
         width: '100%',
-        borderBottomColor: '#a8afb3',
-        borderBottomWidth: 1,
+        borderBottomWidth: 0.2,
         flexDirection: 'row',
-        paddingHorizontal: 10
+        alignItems: 'center',
+        paddingHorizontal: 10,
     },
     secondContainer: {
         paddingHorizontal: 10

@@ -1,4 +1,4 @@
-import { StyleSheet, View, TouchableOpacity, FlatList, Pressable, ScrollView, LayoutAnimation } from 'react-native';
+import { Text, StyleSheet, View, TouchableOpacity, FlatList, Pressable, SectionList,ScrollView,KeyboardAvoidingView, LayoutAnimation } from 'react-native';
 import React, { useRef, useState, useEffect } from 'react';
 import { NavigationProp, ParamListBase } from '@react-navigation/native';
 import { useTasks } from '../../TasksContextProvider';
@@ -11,16 +11,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HeadingText } from '../../Texts';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import AddingTasks from './AddingTasks';
+import Calendarr from 'react-native-vector-icons/EvilIcons';
+import { isAfter, isYesterday, subDays, isSameDay, isTomorrow, parse, isBefore, format, startOfToday } from 'date-fns';
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
 const Important = ({ navigation }: Props) => {
 
-  const { allTasks, setAllTasks } = useTasks();
+  const { allTasks, setAllTasks,dueDate } = useTasks();
   const refRBSheet = useRef<RBSheet>(null);
   const [isRBSheetOpen, setIsRBSheetOpen] = useState(false);
   const [task, setTask] = useState('');
-  const refEditableTask = useRef<RBSheet>(null);
+  
   const Animate = () => {
     LayoutAnimation.configureNext({
       duration: 500,
@@ -39,13 +41,19 @@ const Important = ({ navigation }: Props) => {
   const handleAddTask = async () => {
     if (task.trim() !== '') {
       const taskId = Date.now().toString();
-      const newTask = { id: taskId, name: task, isCompleted: false, isImportant: true }; // Set isImportant to true
+      const newTask = {
+        id: taskId,
+        name: task,
+        isCompleted: false,
+        isImportant: true,
+        dateSet: dueDate,
+        myDay:false,
+      };
       const updatedTasks = [newTask, ...allTasks];
-      console.log('opened handleAddTask onpress')
       try {
         await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
-        Animate();
-        setAllTasks(updatedTasks);
+        Animate()
+        setAllTasks(updatedTasks)
         setTask('');
       } catch (error) {
         console.error('Error saving tasks to AsyncStorage:', error);
@@ -107,7 +115,44 @@ const Important = ({ navigation }: Props) => {
     }
   };
 
-
+  const renderDateConditional = (item) => {
+    const currentDate = startOfToday();
+    const parsedDate = parse(item.dateSet, "dd/MM/yyyy", new Date());
+    const currentYear = new Date().getFullYear();
+    const isCurrentYear = parsedDate.getFullYear() === currentYear;
+  
+    const iconColor = isBefore(parsedDate, currentDate) || isYesterday(parsedDate)
+      ? "red"
+      : isSameDay(parsedDate, currentDate)
+        ? "#7568f8" // Your original color for today
+        : "grey";
+        
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Calendarr name="calendar" size={15} color={iconColor} style={{ marginRight: 3 }} />
+        {isBefore(parsedDate, currentDate) ? (
+          <Text style={styles.overdueTag}>
+            {isYesterday(parsedDate) ? (
+              `Yesterday`
+            ) : (
+              `${format(parsedDate, 'EEE, MMM d')}`
+            )}
+          </Text>
+        ) : isSameDay(parsedDate, currentDate) ? (
+          <Text style={styles.dueTodayTag}>Today </Text>
+        ) : isTomorrow(parsedDate) ? (
+          <Text style={styles.dueTomorrowTag}>Tomorrow</Text>
+        ) : (
+          !isCurrentYear ?
+            <Text style={styles.dueTomorrowTag}>{format(parsedDate, "EEE, MMM d, yyyy")}</Text> // Year included for non-current years (past and future)
+            :
+            <Text style={styles.dueTomorrowTag}>{format(parsedDate, "EEE, MMM d")}</Text>
+        )}
+      </View>
+    );
+  };
+  
+  console.log('allTasks from imp', allTasks)
   return (
     <>
       {isRBSheetOpen &&
@@ -119,8 +164,11 @@ const Important = ({ navigation }: Props) => {
           }}
         />
       }
-      <ScrollView style={styles.taskContainer} keyboardShouldPersistTaps='always'>
-        <FlatList data={filteredImportantTasks} keyExtractor={item => item.id} renderItem={({ item }) => (
+      
+      <KeyboardAvoidingView  style={styles.taskContainer} keyboardShouldPersistTaps='always'>
+        <SectionList sections={[
+          { data: filteredImportantTasks }, // Assuming this array contains the important tasks
+        ]}  keyExtractor={item => item.id} renderItem={({ item }) => (
           <>
             <View style={styles.flatlistitem}>
               <Pressable
@@ -128,17 +176,23 @@ const Important = ({ navigation }: Props) => {
               >
                 <View style={styles.icontextcontainer}>
                   <TouchableOpacity onPress={() => { backToCompleted(item.id) }}>
-                    <Icon name="circle-thin" size={23} color="grey" />
+                    <Icon name="circle-thin" size={27} color="grey" />
                   </TouchableOpacity>
-                  <HeadingText
-                    textString={item.name.trim()}
-                    fontSize={16}
-                    fontWeight="500"
-                    fontFamily="SuisseIntl"
-                    marginLeft={10}
-                  />
+                  <View style={{ flexDirection: 'column', marginLeft: 15 }}>
+                    <HeadingText
+                      textString={item.name.trim()}
+                      fontSize={17}
+                      fontWeight="500"
+                      fontFamily="SuisseIntl"
+                      
+                    />
+                    {item.dateSet && (
+                      <>
+                        {renderDateConditional(item)}
+                      </>
+                    )}
+                  </View>
                 </View>
-
                 <Iconfromentypo name="star" size={22} color="grey" style={{ color: '#971c3d' }} onPress={() => backToTask(item.id)} />
 
               </Pressable>
@@ -146,7 +200,7 @@ const Important = ({ navigation }: Props) => {
           </>
         )} />
 
-      </ScrollView>
+      </KeyboardAvoidingView>
 
       <RBSheet
         ref={refRBSheet}
@@ -165,7 +219,7 @@ const Important = ({ navigation }: Props) => {
 
           },
           container: {
-            height: '15%',
+            height: '22%',
           }
         }}>
         <AddingTasks
@@ -215,13 +269,13 @@ const styles = StyleSheet.create({
   },
   icontextcontainer: {
     flexDirection: 'row',
-    alignItems: 'flex-end'
+    alignItems: 'center'
   },
   taskContainer: {
     flexGrow: 1,
     backgroundColor: '#ffcbd8',
     padding: 10,
-    flex: 1
+    
   },
   modalContainer: {
     justifyContent: 'flex-start',
@@ -236,10 +290,28 @@ const styles = StyleSheet.create({
   },
   flatlistitem: {
     flexDirection: 'row',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    height: 70
   },
-  icons: {
-
+  overdueTag: {
+    color: 'red',
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  dueTodayTag: {
+    // Adjust appearance as desired, e.g.,
+    color: '#7568f8',
+    borderRadius: 5,
+    fontSize: 13,
+    fontWeight: '400',
+    width: 'auto'
+  },
+  dueTomorrowTag: {
+    color: 'grey',
+    borderRadius: 5,
+    fontSize: 13,
+    fontWeight: '400',
+    width: 'auto'
   },
   incompletetasks: {
     elevation: 6,

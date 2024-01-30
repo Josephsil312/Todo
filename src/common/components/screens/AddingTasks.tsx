@@ -16,14 +16,14 @@ const AddingTasks = (props: {
   const [modalVisible, setModalVisible] = useState(false);
   
   const textInputRef = useRef(null);
-  const { allTasks, setAllTasks,selectedDueDate,setSelectedDueDate,dueDate,setDueDate } = useTasks();
+  const { allTasks,selectedDueDate, setSelectedDueDate, dueDate, setDueDate } = useTasks();
 
   const openModal = () => {
     setModalVisible(true);
   };
 
-  
-  const handleDueDateSelected = (dueDateText,dueDate) => {
+
+  const handleDueDateSelected = (dueDateText, dueDate) => {
     setSelectedDueDate(dueDateText);
     setModalVisible(false);
     Keyboard.dismiss();
@@ -39,52 +39,51 @@ const AddingTasks = (props: {
     onFocusHandler();
   }, []);
 
-  console.log('selectedDueDate',selectedDueDate)
+  console.log('selectedDueDate', selectedDueDate)
   return (
     <>
-    <View style = {{marginHorizontal:5}}>
-    <View style={{ flexDirection: 'row', alignItems: 'center',justifyContent:'space-between' }}>
-        <TextInputSingleLine
-          onChangeText={(text: any) => props.setTask(text)}
-          value={props.task}
-          placeholder={'Add task'}
-          maxLength={256}
-          color={'grey'}
-          ref={textInputRef}
-          
-        />
-        <Pressable onPress={props.handleAddTask} style={styles.addingtaskicon}>
-          {
-            props.task.trim() !== ''
-              ? <Iconn name="arrow-up-circle" size={30} color={props.color} />
-              : <Iconn name="arrow-up-circle-outline" size={30} color="grey" />
-          }
-        </Pressable>
-      </View>
-      
+      <View style={{ marginHorizontal: 5 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <TextInputSingleLine
+            onChangeText={(text: any) => props.setTask(text)}
+            value={props.task}
+            placeholder={'Add task'}
+            maxLength={256}
+            color={'grey'}
+            ref={textInputRef}
+          />
+          <Pressable onPress={props.handleAddTask} style={styles.addingtaskicon}>
+            {
+              props.task.trim() !== ''
+                ? <Iconn name="arrow-up-circle" size={30} color={props.color} />
+                : <Iconn name="arrow-up-circle-outline" size={30} color="grey" />
+            }
+          </Pressable>
+        </View>
         <TouchableOpacity onPress={openModal}>
           <View style={styles.addtask}>
-         
-          <HeadingText
-            textString={selectedDueDate || 'Set Due Date'}
-            fontSize={16}
-            fontWeight="500"
-            fontFamily="SuisseIntl"
-            marginVertical={10}
-            style={selectedDueDate ? styles.dueDates : {}}
-          >
-          {selectedDueDate && <Close name="close-o" size={20} color="white" style={{paddingHorizontal:5}}/>}
-          </HeadingText>
-          <Text>Hiii</Text>
+            <View style={{ flexDirection: 'row', backgroundColor:  '#7568f8', borderRadius: 5, padding: 2 }}>
+              <HeadingText
+                textString={
+                  (selectedDueDate || 'Set Due Date')
+                }
+                fontSize={16}
+                fontWeight="500"
+                fontFamily="SuisseIntl"
+                marginVertical={10}
+                style={selectedDueDate ? styles.dueDates : {}}
+                color='white'
+              />
+              {selectedDueDate && <Close name="close-o" size={20} color="white" onPress={() => { setDueDate('');setSelectedDueDate('')}} />}
+            </View>
+            <Text>Hiii</Text>
           </View>
-         
         </TouchableOpacity>
-    </View>
+      </View>
       <CustomModal allTasks={allTasks} selectedDueDate={selectedDueDate} onDueDateSelected={handleDueDateSelected} modalVisible={modalVisible} setModalVisible={setModalVisible} />
     </>
   );
 };
-
 
 const styles = StyleSheet.create({
   image: {
@@ -93,10 +92,9 @@ const styles = StyleSheet.create({
   },
   addtask: {
     flexDirection: 'row',
-    justifyContent:'space-between',
-    alignItems:"center",
-    padding:15,
-    flexWrap: 'wrap'
+    justifyContent: 'space-between',
+    alignItems: "center",
+    paddingHorizontal:12
   },
  
   addingtaskicon: {
@@ -113,12 +111,18 @@ const styles = StyleSheet.create({
   dueDates: {
     backgroundColor: '#7568f8',
     borderRadius: 10,
-    paddingHorizontal:17,       /* Added padding */
+    padding: 10,                      /* Overall padding for content */
+    paddingHorizontal: 15,             /* Wider horizontal padding */
     color: 'white',
     textAlign: 'center',
-    width: 'auto',             /* Optional: Adjust width as needed */  /* Optional: For better contrast */
-    
+    fontSize: 16,                      /* Ensure comfortable text size */
+    lineHeight: 20,                    /* Adjust line height for readability */
+    letterSpacing: 0.4,                /* Optional: Slight letter spacing */
+    width: 'auto',                      /* Adjust width if needed */
+    marginVertical: 5,                  /* Space above and below */
     textShadowRadius: 1,
+    textShadowColor: '#5e54a0',         /* Optional: Darker shadow for contrast */
   }
+
 });
 export default AddingTasks;
