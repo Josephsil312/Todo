@@ -1,6 +1,6 @@
 
 import React, { PropsWithChildren, useCallback, createContext, useContext, useState } from 'react'
-
+import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 const TasksContext = createContext<TasksContextType | undefined>(undefined);
 
 export type Task = {
@@ -39,6 +39,16 @@ type TasksContextType = {
     setMyDayState: any;
     dueDateAdded: any;
     setDueDateAdded: any;
+    editedText:any; 
+    setEditedText:any;
+    initializing:boolean;
+    setInitializing:any;
+    user:any;
+    setUser:any;
+    email:any;
+    setEmail:any;
+    password:any;
+    setPassword:any;
 };
 
 const TasksContextProvider = ({ children }: PropsWithChildren<{}>) => {
@@ -50,6 +60,8 @@ const TasksContextProvider = ({ children }: PropsWithChildren<{}>) => {
     const [myDay,setMyDay] = useState(false);
     const [dueDateAdded,setDueDateAdded] = useState()
     const [showCompletedDropdown, setShowCompletedDropdown] = useState(false);
+    const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
     const [selectedItem, setSelectedItem] = useState<{
         id: string;
         name: string;
@@ -59,8 +71,12 @@ const TasksContextProvider = ({ children }: PropsWithChildren<{}>) => {
     const [selectedDueDate, setSelectedDueDate] = useState('');
     const [dueDate, setDueDate] = useState('');
     const [myDayState,setMyDayState] = useState(false)
+    const [editedText, setEditedText] = useState(selectedItem);
+    const [initializing, setInitializing] = useState(true);
+    const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
+    
     return (
-        <TasksContext.Provider value={{dueDateAdded,setDueDateAdded,myDayState,setMyDayState, myDay,setMyDay,showCompletedDropdown,setShowCompletedDropdown,dueDate, setDueDate, selectedDueDate, setSelectedDueDate, currentTaskName, setCurrentTaskName, allTasks, setAllTasks, setStarredTasks, starredTasks, star, setStar, tasks, setTasks, completedTasks, setCompletedTasks, starId, setStarId, selectedItem, setSelectedItem }}>
+        <TasksContext.Provider value={{password, setPassword,email, setEmail,user, setUser,initializing, setInitializing,editedText, setEditedText,dueDateAdded,setDueDateAdded,myDayState,setMyDayState, myDay,setMyDay,showCompletedDropdown,setShowCompletedDropdown,dueDate, setDueDate, selectedDueDate, setSelectedDueDate, currentTaskName, setCurrentTaskName, allTasks, setAllTasks, setStarredTasks, starredTasks, star, setStar, tasks, setTasks, completedTasks, setCompletedTasks, starId, setStarId, selectedItem, setSelectedItem }}>
             {children}
         </TasksContext.Provider>
     )

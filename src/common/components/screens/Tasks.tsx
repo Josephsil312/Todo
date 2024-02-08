@@ -2,18 +2,15 @@ import {
   View,
   TouchableOpacity,
   StyleSheet,
-  FlatList,
   Pressable,
-  Image,
-  ScrollView,
-  Animated,
-  Easing,
   Text,
   LayoutAnimation,
   SectionList,
   SafeAreaView,
   KeyboardAvoidingView
 } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring } from 'react-native-reanimated'
+import firestore from '@react-native-firebase/firestore';
 import React, { useState, useRef, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RBSheet from 'react-native-raw-bottom-sheet';
@@ -28,7 +25,7 @@ import Iconfromentypo from 'react-native-vector-icons/Entypo';
 import Iconchev from 'react-native-vector-icons/Entypo';
 import Plusicon from 'react-native-vector-icons/AntDesign';
 import Check from 'react-native-vector-icons/AntDesign';
-import { RectButton, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { RectButton, GestureHandlerRootView, PanGestureHandler, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useTasks } from '../../TasksContextProvider';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { isAfter, isYesterday, subDays, isSameDay, isTomorrow, parse, isBefore, format, startOfToday } from 'date-fns';
@@ -42,8 +39,24 @@ const Tasks = ({ navigation }: Props) => {
   const refEditableTask = useRef<RBSheet>(null);
   const [task, setTask] = useState('');
   const [isRBSheetOpen, setIsRBSheetOpen] = useState(false);
-  const [rotationAnimation] = useState(new Animated.Value(0));
-  const { dueDateAdded,setDueDateAdded,showCompletedDropdown, myDayState,setMyDayState,setShowCompletedDropdown, dueDate, allTasks, setAllTasks, selectedItem, setSelectedItem, star, starId, setStarId } = useTasks();
+  // const [rotationAnimation] = useState(new Animated.Value(0));
+  const { dueDateAdded,
+    setDueDateAdded,
+    showCompletedDropdown,
+    myDayState,
+    setMyDayState,
+    setShowCompletedDropdown,
+    dueDate,
+    allTasks,
+    setAllTasks,
+    selectedItem,
+    setSelectedItem,
+    star,
+    starId,
+    setStarId,
+    editedText,
+    setEditedText } = useTasks();
+
 
 
   const Animate = () => {
@@ -60,20 +73,34 @@ const Tasks = ({ navigation }: Props) => {
       }
     });
   }
+  // const datafromfirebase = async () => {
+  //   try {
+  //     const data = await firestore().collection('users').doc('0cfFPPHSip8zKQjDiD1j').get();
+  //     console.log('data from firebase',data._data.name)
+  //   } catch (err) {
+  //     console.log(err)
+  //   }
+  // }
+  // useEffect(() => {
+  //   datafromfirebase()
+  // }, [])
+  const swipeableRef = useRef(null);
+  // const width = useSharedValue('100%');
+  const rightSwipe = ({ item, onDelete }) => {
 
-  const SwipeableRow = ({ item, onDelete }) => {
-    const renderRightActions = (progress, dragX) => {
+    const renderRightActions = (dragX) => {
       const trans = dragX.interpolate({
-        inputRange: [0, 50, 100, 101],
-        outputRange: [-20, 0, 0, 1],
+        inputRange: [-100, 0],
+        outputRange: [0, 1],
+        extrapolate: 'clamp'
       });
       return (
-        <RectButton style={styles.rightAction} onPress={onDelete}>
+        <RectButton style={styles.rightAction} onPress={() => onDelete(item.id)}>
           <Animated.Text
             style={[
               styles.actionText,
               {
-                transform: [{ translateX: trans }],
+                transform: [{ translateX: 100 }],
               },
             ]}
           >
@@ -85,19 +112,40 @@ const Tasks = ({ navigation }: Props) => {
 
     return (
       <Swipeable renderRightActions={renderRightActions}>
-        <View style={styles.row}>
-          <Text>{item.text}</Text>
+        <View style={{ flex: 1 }}>
+          <Animated.View style={{
+            width: 500,
+            flex: 1,
+          }}>
+            {/* <Text>{item.name}</Text> */}
+          </Animated.View>
         </View>
+
       </Swipeable>
     );
   };
+
+  const pressed = useSharedValue(false);
+
+  const tap = Gesture.Tap()
+    .onBegin(() => {
+      pressed.value = true;
+    })
+    .onFinalize(() => {
+      pressed.value = false;
+    });
+
+  const animatedStyles = useAnimatedStyle(() => ({
+    backgroundColor: pressed.value ? '#5A69AF' : '',
+    transform: [{ scale: withSpring(pressed.value ? 0.8 : 1) }],
+  }));
 
   const handleAddTask = async () => {
     if (task.trim() !== '') {
       const taskId = Date.now().toString();
       const newTask = {
         id: taskId,
-        name: task,
+        name: task || editedText,
         isCompleted: false,
         isImportant: false,
         dateSet: dueDate,
@@ -136,8 +184,6 @@ const Tasks = ({ navigation }: Props) => {
     };
     loadTasks();
   }, []);
-
-
 
   const deleteTask = async (id: String) => {
     const updatedTasks = allTasks.filter((task) => task.id !== id);
@@ -199,26 +245,6 @@ const Tasks = ({ navigation }: Props) => {
     }
   };
 
-  useEffect(() => {
-    Animated.timing(rotationAnimation, {
-      toValue: showCompletedDropdown ? 1 : 0,
-      duration: 300,
-      easing: Easing.inOut(Easing.ease), // You can customize the easing function
-      useNativeDriver: false, // 'false' because we're animating a style property that's not supported by the native driver
-    }).start();
-  }, [showCompletedDropdown, rotationAnimation]);
-
-  const animatedStyle = {
-    transform: [
-      {
-        rotate: rotationAnimation.interpolate({
-          inputRange: [0, 1],
-          outputRange: ['0deg', '90deg'],
-        }),
-      },
-    ],
-  };
-
   const openRBSheet = (item: any) => {
     if (refEditableTask?.current) {
       refEditableTask.current.open();
@@ -227,18 +253,6 @@ const Tasks = ({ navigation }: Props) => {
       setMyDayState(item.myDay)
     }
   };
-
-  const rightSwipe = (id: String) => {
-    return (
-      <View>
-        <TouchableOpacity onPress={() => deleteTask(id)}>
-          <Text>Delete</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-
 
   const renderDateConditional = (item) => {
     const currentDate = startOfToday();
@@ -277,17 +291,24 @@ const Tasks = ({ navigation }: Props) => {
     )
   }
   const formattedDueDate = dueDateAdded
-  ? `Due on ${format(parse(dueDateAdded, 'dd/MM/yyyy', new Date()), 'EEE, MMM d')}`
-  : 'Add due date';
- 
+    ? `Due on ${format(parse(dueDateAdded, 'dd/MM/yyyy', new Date()), 'EEE, MMM d')}`
+    : 'Add due date';
 
-  console.log('alltasks from tasks', allTasks)
   const sections = [
     { data: allTasks.filter((task) => !task.isCompleted) },
     { title: 'Completed Tasks', data: allTasks.filter((task) => task.isCompleted) },
   ];
-  console.log('mydayState',myDayState)
-  
+
+  const updateTaskName = (taskId: string, newName: string) => {
+    const updatedTasks = allTasks.map((task) =>
+      task.id === taskId ? { ...task, name: newName } : task
+    );
+    setAllTasks(updatedTasks);
+    // Update the task name in AsyncStorage if needed
+    // ...
+  };
+  console.log('alltasks from tasks', allTasks)
+
   return (
     <>{isRBSheetOpen &&
       <View
@@ -300,138 +321,155 @@ const Tasks = ({ navigation }: Props) => {
     }
       <KeyboardAvoidingView style={styles.taskContainer} keyboardShouldPersistTaps='always'>
         <GestureHandlerRootView>
-          <SectionList
-            sections={sections}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => (
-              <>
-                <Swipeable renderRightActions={() => rightSwipe(item.id)} >
-                  <View style={styles.flatlistitem}>
-                    <Pressable
-                      style={styles.incompletetasks}
-                      onPress={() => { openRBSheet(item.name); setStarId(item.id);setMyDayState(item.myDay);setDueDateAdded(item.dateSet) }}
-                    >
-                      <View style={styles.icontextcontainer}>
-                        {item.isCompleted ? (
-                          <TouchableOpacity onPress={() => {
-                            toggleTask(item.id);
-                          }}>
-                            <Check name="checkcircle" size={23} color={'#5A69AF'} />
-                          </TouchableOpacity>
-                        ) : (
-                          <TouchableOpacity onPress={() => handleCompleteTask(item.id)}>
-                            <Icon name="circle-thin" size={27} color="grey" />
-                          </TouchableOpacity>
-                        )}
-                        <View style={{ flexDirection: 'column', marginLeft: 15, }}>
+          <PanGestureHandler>
+            <SectionList
+              sections={sections}
+              keyExtractor={item => item.id}
+              renderItem={({ item }) => (
+                <>
+                  <Swipeable renderRightActions={() => rightSwipe(item.id)}
+                    onSwipeableOpen={() => deleteTask(item.id)}
+                    ref={swipeableRef}
 
-                          <HeadingText
-                            textString={item.name.trim()}
-                            fontSize={17}
-                            fontWeight="500"
-                            fontFamily="SuisseIntl"
-                            textDecorationLine={item.isCompleted ? "line-through" : ''}
-                          />
+                  >
 
-                          {item.dateSet && (
-                            <>
-                              {renderDateConditional(item)}
-                            </>
+                    <Animated.View style={styles.flatlistitem}>
+                      <Pressable
+                        style={styles.incompletetasks}
+                        onPress={() => { openRBSheet(item.name); setStarId(item.id); setMyDayState(item.myDay); setDueDateAdded(item.dateSet) }}
+                      >
+                        <View style={styles.icontextcontainer}>
+
+                          {item.isCompleted ? (
+                            <TouchableOpacity onPress={() => {
+                              toggleTask(item.id);
+                            }}>
+                              <GestureDetector gesture={tap}>
+                                <Animated.View style={animatedStyles}>
+                                  <Check name="checkcircle" size={23} color={'#5A69AF'} />
+                                </Animated.View>
+                              </GestureDetector>
+                            </TouchableOpacity>
+                          ) : (
+                            <TouchableOpacity onPress={() => handleCompleteTask(item.id)}>
+                              <GestureDetector gesture={tap}>
+                                <Animated.View style={animatedStyles}>
+                                  <Icon name="circle-thin" size={27} color="grey" />
+                                </Animated.View>
+                              </GestureDetector>
+                            </TouchableOpacity>
                           )}
+                          <View style={{ flexDirection: 'column', marginLeft: 15, }}>
 
+                            <HeadingText
+                              textString={item.name.trim()}
+                              fontSize={17}
+                              fontWeight="500"
+                              fontFamily="SuisseIntl"
+                              textDecorationLine={item.isCompleted ? "line-through" : ''}
+                            />
+
+                            {item.dateSet && (
+                              <>
+                                {renderDateConditional(item)}
+                              </>
+                            )}
+
+                          </View>
                         </View>
-                      </View>
-                      <Pressable key={item.id} onPress={() => starChange(item.id)}>
-                        {item.isImportant ? <Iconfromentypo name="star" size={22} color="grey" style={{ color: '#5A69AF' }} />
-                          : <Iconn name="star" size={25} color="grey" />
-                        }
+                        <Pressable key={item.id} onPress={() => starChange(item.id)}>
+                          {item.isImportant ? <Iconfromentypo name="star" size={22} color="grey" style={{ color: '#5A69AF' }} />
+                            : <Iconn name="star" size={25} color="grey" />
+                          }
+                        </Pressable>
                       </Pressable>
-                    </Pressable>
-                  </View>
-                </Swipeable>
-              </>
-            )}
-            renderSectionHeader={({ section: { title } }) => {
-              if (title) {
-                return (
-                  <Pressable onPress={toggleCompletedDropdown} style={styles.completedlistlength}>
-                    <Animated.View style={[animatedStyle]}>
-                      <Iconchev name="chevron-small-right" size={20} color="white" />
                     </Animated.View>
-                    <HeadingText
-                      textString={`Completed ${allTasks.filter((task) => task.isCompleted).length}`}
-                      fontSize={16}
-                      fontWeight="500"
-                      fontFamily="SuisseIntl"
-                      color='white'
-                    />
-                  </Pressable>
-                );
-              } else {
-                return null;
+
+                  </Swipeable>
+                </>
+              )}
+              renderSectionHeader={({ section: { title } }) => {
+                if (title) {
+                  return (
+                    <Pressable onPress={toggleCompletedDropdown} style={styles.completedlistlength}>
+                      {/* <Animated.View style={[animatedStyle]}> */}
+                      <Iconchev name="chevron-small-right" size={20} color="white" />
+                      {/* </Animated.View> */}
+                      <HeadingText
+                        textString={`Completed ${allTasks.filter((task) => task.isCompleted).length}`}
+                        fontSize={16}
+                        fontWeight="500"
+                        fontFamily="SuisseIntl"
+                        color='white'
+                      />
+                    </Pressable>
+                  );
+                } else {
+                  return null;
+                }
+              }}
+            />
+          </PanGestureHandler>
+
+          <RBSheet
+            ref={refRBSheet}
+            closeOnDragDown={false}
+            closeOnPressMask={true}
+            animationType="fade"
+            height={70}
+            isOpen={isRBSheetOpen}
+            onClose={() => setIsRBSheetOpen(false)}
+            customStyles={{
+              wrapper: {
+                backgroundColor: 'transparent',
+              },
+              draggableIcon: {
+                backgroundColor: '#000',
+
+              },
+              container: {
+                height: '22%',
               }
-            }}
-          />
+            }}>
+            <AddingTasks
+              handleAddTask={handleAddTask}
+              task={task}
+              setTask={setTask}
+              color={'#5A69AF'}
+            />
+          </RBSheet>
+
+
+          <RBSheet
+            ref={refEditableTask}
+            closeOnDragDown={false}
+            closeOnPressMask={true}
+            animationType="slide"
+            height={70}
+            isOpen={isRBSheetOpen}
+            onClose={() => setIsRBSheetOpen(false)}
+            customStyles={{
+              wrapper: {
+                backgroundColor: 'transparent',
+              },
+              draggableIcon: {
+                backgroundColor: '#000',
+              },
+              container: {
+                height: '70%',
+              }
+            }}>
+            <Editable
+              star={star}
+              tasks={allTasks}
+              navigation={navigation}
+              selectedItem={selectedItem}
+              starId={starId}
+              myDayState={myDayState}
+              formattedDueDate={formattedDueDate}
+              updateTaskName={updateTaskName} />
+          </RBSheet>
         </GestureHandlerRootView>
-
-        <RBSheet
-          ref={refRBSheet}
-          closeOnDragDown={false}
-          closeOnPressMask={true}
-          animationType="fade"
-          height={70}
-          isOpen={isRBSheetOpen}
-          onClose={() => setIsRBSheetOpen(false)}
-          customStyles={{
-            wrapper: {
-              backgroundColor: 'transparent',
-            },
-            draggableIcon: {
-              backgroundColor: '#000',
-
-            },
-            container: {
-              height: '22%',
-            }
-          }}>
-          <AddingTasks
-            handleAddTask={handleAddTask}
-            task={task}
-            setTask={setTask}
-            color={'#5A69AF'}
-          />
-        </RBSheet>
-
-
-        <RBSheet
-          ref={refEditableTask}
-          closeOnDragDown={false}
-          closeOnPressMask={true}
-          animationType="slide"
-          height={70}
-          isOpen={isRBSheetOpen}
-          onClose={() => setIsRBSheetOpen(false)}
-          customStyles={{
-            wrapper: {
-              backgroundColor: 'transparent',
-            },
-            draggableIcon: {
-              backgroundColor: '#000',
-            },
-            container: {
-              height: '70%',
-            }
-          }}>
-          <Editable
-            star={star}
-            tasks={allTasks}
-            navigation={navigation}
-            selectedItem={selectedItem}
-            starId={starId}
-            myDayState={myDayState}
-            formattedDueDate={formattedDueDate}/>
-        </RBSheet>
-
       </KeyboardAvoidingView>
 
       <View
@@ -517,12 +555,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     height: 70
   },
-  row: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
+
   rightAction: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -534,7 +567,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   incompletetasks: {
-    elevation: 6,
+    // Remove elevation and shadow properties
     paddingVertical: 20,
     paddingHorizontal: 10,
     borderRadius: 5,
@@ -542,15 +575,33 @@ const styles = StyleSheet.create({
     marginBottom: 2,
     justifyContent: 'space-between',
     flexDirection: 'row',
-    shadowColor: '#005F8D',
-    backgroundColor: 'white',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.6,
-    shadowRadius: 20,
-    width: '100%'
+
+    // Background color for neumorphic effect
+    backgroundColor: '#f5f5f5', // Adjust as needed
+
+    // Simulate soft lighting and depth
+    boxShadow: [
+      {
+        offset: {
+          width: 0,
+          height: 2,
+        },
+        color: '#fff', // Lighter shadow on top
+        blurRadius: 10,
+        spreadRadius: -5, // Expand inward for pressed effect
+      },
+      {
+        offset: {
+          width: 0,
+          height: -2,
+        },
+        color: '#ccc', // Darker shadow below
+        blurRadius: 10,
+        spreadRadius: 2, // Expand outward for raised effect
+      },
+    ],
+
+    width: '100%',
   },
   addicon: {
     position: 'absolute',

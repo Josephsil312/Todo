@@ -49,6 +49,7 @@ const MyDay = ({ navigation }: Props) => {
         isCompleted: false,
         isImportant: false,
         dateSet: dueDate,
+        // myDay:isSameDay(parse(dueDate, "dd/MM/yyyy", new Date()), startOfToday()) || true
         myDay:true
       };
       const updatedTasks = [newTask, ...allTasks];
@@ -233,11 +234,12 @@ const MyDay = ({ navigation }: Props) => {
 const sections = [
   {
     data: allTasks.filter(
-      (task) =>((!task.isCompleted && task.myDay))
+      (task) =>((!task.isCompleted && task.myDay && task.myDay))
     ),
   },
   { title: 'Completed Tasks', data: allTasks.filter((task) => (task.isCompleted === true && task.myDay))},
 ];
+
 console.log('alltasks from myday', allTasks)
   return (
     <>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TextInput, Pressable } from 'react-native';
 import { HeadingText } from '../../common/Texts';
 import { TextInputSingleLine } from '../../styled';
@@ -11,24 +11,23 @@ import Remind from 'react-native-vector-icons/AntDesign';
 import { parse, format } from 'date-fns';
 import Cross from 'react-native-vector-icons/Entypo';
 import Iconn from 'react-native-vector-icons/EvilIcons';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const Editable = (props: any) => {
     const [editedText, setEditedText] = useState(props.selectedItem);
-    const { allTasks,dueDateAdded } = useTasks()
-    const task = allTasks.find((task) => task.id === props.selectedItem);
-    const dueDateAddedfrom = task?.dueDateAdded;
-    const handleTextChange = (text: string) => {
-        setEditedText(text);
-    };
-    const { myDayState } = props;
-      
-   
-    
-    // const formattedDueDate = dueDateAddedfrom
-    //     ? `Due ${format(parse(dueDateAddedfrom, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy')}`
-    //     : 'Add due date';
+    const { allTasks, dueDateAdded, setAllTasks,setMyDayState } = useTasks()
 
-    console.log('dueDateAddedfrom from editable',dueDateAddedfrom)
+    const { myDayState, updateTaskName } = props;
+
+
+    const handleSave = async () => {
+
+        updateTaskName(props.selectedItem.id, editedText);
+
+    }
+    console.log('alltasks', allTasks)
+
+
+
     return (
         <>
             <View style={styles.container}>
@@ -36,7 +35,7 @@ const Editable = (props: any) => {
                     <View style={styles.editablecontainer}>
                         <Icon name="circle-thin" size={27} color="grey" />
                         <TextInputSingleLine
-                            onChangeText={handleTextChange}
+                            onChangeText={(text) => setEditedText(text)}
                             value={editedText}
                             placeholder={'Add task'}
                             maxLength={256}
@@ -53,6 +52,15 @@ const Editable = (props: any) => {
                             style={{ color: allTasks.find((task) => task.id === starId)?.isImportant ? '#f5eb05' : '' }}
                         />
                     )} */}
+                    <Pressable onPress={handleSave}>
+                        <HeadingText
+                            textString={'save'}
+                            fontSize={12}
+                            fontWeight="500"
+                            fontFamily="SuisseIntl"
+                            textDecorationLine="none"
+                            color='#a8afb3'
+                        /></Pressable>
 
                 </View>
                 <View style={styles.secondContainer}>
@@ -69,7 +77,7 @@ const Editable = (props: any) => {
                                 marginLeft={10}
                             />
                         </View>
-                        {myDayState && <Cross name="cross" size={22} color="grey" />}
+                        {myDayState && <Pressable onPress = {() => setMyDayState(false)}><Cross name="cross" size={22} color="grey" /></Pressable>}
                     </View>
 
                     <View style={styles.addtoduedate}>

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "737738243110",
+    "project_id": "react-native-todo-93ead",
+    "storage_bucket": "react-native-todo-93ead.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:737738243110:android:57f26beba4f3b6b4ee7ae7",
+        "android_client_info": {
+          "package_name": "com.todo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "737738243110-bgo1e2sdbvka1l54bh88qc0d7c1oa9u6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.todo",
+            "certificate_hash": "1904c32aa82904714ff4473079625717a50db8da"
+          }
+        },
+        {
+          "client_id": "737738243110-urmsj0q3ipicbpc6ppru9mppo2s9gajf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDJDWVmom5EbfmkRMmYo4OHEbZSBG48tA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "737738243110-urmsj0q3ipicbpc6ppru9mppo2s9gajf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
