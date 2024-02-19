@@ -1,73 +1,98 @@
-import { StyleSheet, View, Modal, TouchableWithoutFeedback, Image, TouchableOpacity } from 'react-native'
+import { StyleSheet, View, Modal, TouchableWithoutFeedback, Image, TouchableOpacity, Text } from 'react-native'
 import React, { useState } from 'react'
 import { HeadingText } from '../../Texts';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
-import { format, addDays, startOfDay, getDay } from 'date-fns';
+import { format, addDays, startOfDay, getDay, addHours, startOfToday, isAfter, isBefore, parse, isYesterday, isSameDay, isTomorrow, startOfTomorrow } from 'date-fns';
 import { useTasks } from '../../TasksContextProvider';
 import CalendarToday from 'react-native-vector-icons/AntDesign'
 import CalendarTomorrow from 'react-native-vector-icons/FontAwesome';
 import CalendarPick from 'react-native-vector-icons/FontAwesome';
 const CustomModal = (props: {
-    modalVisible: boolean;
-    setModalVisible: any;
-    onDueDateSelected: any;
-    selectedDueDate: any;
-    allTasks: any;
+    dateTimeModalVisible: any;
+    setDateTimeModalVisible: any;
+    handleReminderDuedateTime: any;
 }) => {
-    const [date, setDate] = useState(new Date());
+    // const [date, setDate] = useState(new Date());
+    // const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+    // const { dueDate, setDueDate } = useTasks();
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
-    const { dueDate, setDueDate } = useTasks();
-
+    const {setDueDateTimeDisplay} = useTasks()
+    const [date, setDate] = useState(new Date());
     const closeModal = () => {
-        props.setModalVisible(false);
+        props.setDateTimeModalVisible(false);
     };
-    const showDatePicker = () => {
+    const showDateTimePicker = () => {
         setDatePickerVisibility(true);
+    };
+
+    // const hideDatePicker = () => {
+    //     setDatePickerVisibility(false);
+    // };
+
+    const handleConfirm = (date) => {
+       const timeFromDateTimePicker =  format(date, 'HH:mm') //12:00
+        const formattedDate = format(date, 'dd/MM/yyyy'); // 15/02/2024
+        const formattedDueDateText = `${format(date, 'EEE, MMM d')}`; //thu, feb 15
+        let textFromDateTimePicker = `Remind me at ${timeFromDateTimePicker} ${formattedDueDateText}`
+        setDueDateTimeDisplay(textFromDateTimePicker)
+        props.handleReminderDuedateTime(textFromDateTimePicker,timeFromDateTimePicker,formattedDate)
+        hideDatePicker();
+        closeModal();
+    };
+
+ 
+
+    const currentTime = new Date();
+    const formattedTime = currentTime.toLocaleTimeString('en-US', { hour12: false });
+
+    const hours = parseInt(formattedTime.split(':')[0]);
+    const newHours = (hours + 3) % 24;
+    const timeWithAddedHours = `${newHours.toString().padStart(2, '0')}:00`;
+    console.log(`Current time + 3 hours: ${timeWithAddedHours}`);
+
+   
+    const formatDateToDayOfWeek = (selectedDateTime: any) => {
+        const options = { weekday: 'long' };
+        const dayOfWeek = selectedDateTime?.toLocaleDateString('en-US', options);
+        return dayOfWeek?.split(',')[0].slice(0, 3);
     };
 
     const hideDatePicker = () => {
         setDatePickerVisibility(false);
     };
 
-    const handleConfirm = (date) => {
-        console.log('date',date)
-        const formattedDate = format(date, 'dd/MM/yyyy');
-        const formattedDueDateText = `Due on ${format(date, 'EEE, MMM d')}`;
-        props.onDueDateSelected(formattedDueDateText, formattedDate);
-        hideDatePicker();
-        setDueDate(formattedDate)//check if this is required
-        closeModal();
-    };
-
-    const formatDateToDayOfWeek = (selectedDate: any) => {
-        const options = { weekday: 'long' };
-        const dayOfWeek = selectedDate?.toLocaleDateString('en-US', options);
-        return dayOfWeek?.split(',')[0];
-    };
-
     const today = date;
+    const formattedToday = format(today, 'dd/MM/yyyy');
+
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
-    const formattedToday = format(today, 'dd/MM/yyyy'); // Note the capitalization for month
     const formattedTomorrow = format(tomorrow, 'dd/MM/yyyy')
+    const tomorrowAtNine = addHours(addDays(startOfDay(new Date()), 1), 9);
+    const formattedTomorrowAtNine = format(tomorrowAtNine, 'HH:mm');
+    console.log('tomat9',formattedTomorrowAtNine) //tom at 9:00
+    const todayNinePM = addHours(startOfToday(), 21);
+    // Check if the current time is after 21:00
+    const isDisabled = isAfter(currentTime, todayNinePM);
+   
     return (
         <View>
             <Modal
                 animationType="fade"
                 transparent={true}
-                visible={props.modalVisible}
+                visible={props.dateTimeModalVisible}
                 onRequestClose={() => {
-                    props.setModalVisible(false);
+                    props.setDateTimeModalVisible(false);
 
                 }}>
                 <TouchableWithoutFeedback onPress={closeModal}>
                     <View style={styles.centeredView}>
                         <View style={styles.modalView}>
-                            <TouchableOpacity onPress={() => props.onDueDateSelected('Due Today', formattedToday)}>
-                                <View style={styles.modalcontainer}>
+                            <TouchableOpacity disabled={isDisabled} onPress={() => {props.handleReminderDuedateTime(`Remind me at ${timeWithAddedHours} today`,timeWithAddedHours,formattedToday) }}
+                            >
+                                <View style={[styles.modalcontainer, isDisabled && styles.disabledOption]}>
                                     <CalendarToday name='calendar' size={22} style={{ marginVertical: 10 }} />
                                     <HeadingText
-                                        textString={`Today (${formatDateToDayOfWeek(today)})`}
+                                        textString={`Later today ${isDisabled ? '' : `(${timeWithAddedHours})`}`}
                                         fontSize={16}
                                         fontFamily="SuisseIntl"
                                         marginLeft={10}
@@ -76,14 +101,14 @@ const CustomModal = (props: {
                                 </View>
 
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => props.onDueDateSelected('Due Tomorrow', formattedTomorrow)}>
+                            <TouchableOpacity onPress={() => { props.handleReminderDuedateTime(`Remind me at 09:00 tomorrow`,formattedTomorrowAtNine,formattedTomorrow) }}>
                                 <View style={styles.modalcontainer}>
 
-                                    <CalendarTomorrow name = "calendar-plus-o" size = {22} style={{ marginVertical: 10 }} />
+                                    <CalendarTomorrow name="calendar-plus-o" size={22} style={{ marginVertical: 10 }} />
                                     <HeadingText
-                                        textString={`Tomorrow (${formatDateToDayOfWeek(tomorrow)})`}
+                                        textString={`Tomorrow (${formatDateToDayOfWeek(tomorrow)} 9:00)`}
                                         fontSize={16}
-                                        
+
                                         fontFamily="SuisseIntl"
                                         marginLeft={10}
                                         marginVertical={10}
@@ -91,26 +116,26 @@ const CustomModal = (props: {
                                 </View>
 
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={showDatePicker}>
+                            <TouchableOpacity onPress={showDateTimePicker}>
                                 <View style={styles.modalcontainer}>
                                     <CalendarPick name="calendar-check-o" size={22} style={{ marginVertical: 10 }} />
                                     <HeadingText
-                                        textString={`Pick a date`}
+                                        textString={`Pick a date & time`}
                                         fontSize={16}
-                                        
                                         fontFamily="SuisseIntl"
                                         marginLeft={10}
                                         marginVertical={10}
                                     />
                                 </View>
                             </TouchableOpacity>
+                            
                         </View>
                     </View>
                 </TouchableWithoutFeedback>
             </Modal>
             <DateTimePickerModal
                 isVisible={isDatePickerVisible}
-                mode="date"
+                mode='datetime'
                 onConfirm={handleConfirm}
                 onCancel={hideDatePicker}
             />
@@ -127,6 +152,10 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
 
     },
+    disabledOption: {
+        opacity: 0.5,
+        color: 'red' // Reduce opacity to visually indicate the option is disabled
+    },
     todayContainer: {
         backgroundColor: '#f0ffe0', // Green color for Today
     },
@@ -134,10 +163,11 @@ const styles = StyleSheet.create({
         backgroundColor: '#f8f8f8', // Light grey color for Tomorrow
     },
     modalView: {
-        marginBottom: '25%',
+
         backgroundColor: 'white',
         borderRadius: 10,
-        
+        bottom: 120,
+        left: 130,
         padding: 10,
         alignItems: 'flex-start',
         shadowColor: '#000',

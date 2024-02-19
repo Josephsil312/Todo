@@ -6,7 +6,7 @@ export const HeadingTextStyle = styled.Text<HeadingTextProps>`
   font-size: ${(props: {fontSize: any}) =>
     `${props.fontSize ? props.fontSize : 18}px`};
   color: ${(props: {color: any}) => props.color || '#05041b'};
-  font-weight: ${(props: {fontWeight: any}) => props.fontWeight || '500'};
+  font-weight: ${(props: {fontWeight: any}) => props.fontWeight || '600'};
   background-color: ${(props: {backgroundColor: any}) =>
     props.backgroundColor ? `${props.backgroundColor}` : 'transparent'};
   margin-bottom: ${(props: {marginBottom: any}) =>
@@ -39,14 +39,14 @@ export const RowContainer = styled.View`
 `;
 
 export const TextInputSingleLine = styled.TextInput.attrs<TextInputProps>(
-  (props: {placeholderTextColor: any}) => ({
+  (props: {placeholderTextColor: any,placeholderFontSize:any}) => ({
     placeholderTextColor: props.placeholderTextColor || '#636364',
+    placeholderFontSize:props.placeholderFontSize || 12
   }),
 )`
   width: 90%;
   font-weight: 600;
-  font-size: 16px;
-  padding-left: 15px;
+  font-size: 18px;
   color: ${(props: TextInputProps) => props.color};
   font-family: 'SuisseIntl';
 `;

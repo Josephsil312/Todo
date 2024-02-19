@@ -20,7 +20,7 @@ export interface HeadingTextProps {
   fontSize?: number;
   numberOfLines?: number;
   ellipsizeMode?: string;
-  fontWeight?: string;
+  fontWeight?: number;
   fontFamily?: string;
   textAlign?: string;
   height?: number;
@@ -76,6 +76,7 @@ export interface TextInputProps {
   marginTop?: number;
   marginBottom?: number;
   returnKeyType?:string;
+  textDecorationLine?:string;
 }
 
 export type GroupStepProps = {

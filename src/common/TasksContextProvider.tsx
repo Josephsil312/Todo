@@ -49,19 +49,44 @@ type TasksContextType = {
     setEmail:any;
     password:any;
     setPassword:any;
+    docId:any;
+    setDocId:any;
+    dueDateTimeReminderText:any;
+    setDueDateTimeReminderText:any;
+    dueDateTimeReminderTime:any;
+    dueDateTimeReminderDateFormatted:any;
+    setDueDateTimeReminderTime:any;
+    setDueDateTimeReminderDateFormatted:any;
+    dueDateTimeDisplay:any;
+    setDueDateTimeDisplay:any;
+    setDueDateTimeReminderDate:any;
+    dueDateTimeReminderDate:any;
+    captureDateTimeReminderDate:any;
+    setCaptureDateTimeReminderDate:any;
+    captureDateTimeReminderTime:any;
+    setCaptureDateTimeReminderTime:any;
+    taskCompleted:any;
+    setTaskCompleted:any
 };
 
 const TasksContextProvider = ({ children }: PropsWithChildren<{}>) => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
     const [starId, setStarId] = useState('');
+    const [captureDateTimeReminderDate,setCaptureDateTimeReminderDate] = useState('')
+    const [captureDateTimeReminderTime,setCaptureDateTimeReminderTime] = useState('')
+    const [dueDateTimeReminderTime,setDueDateTimeReminderTime] = useState('')
+    const [dueDateTimeReminderDateFormatted,setDueDateTimeReminderDateFormatted] = useState('')
+    const [dueDateTimeReminderDate,setDueDateTimeReminderDate] = useState('')
     const [allTasks, setAllTasks] = useState<Task[]>([]);
     const [currentTaskName, setCurrentTaskName] = useState('');
     const [myDay,setMyDay] = useState(false);
     const [dueDateAdded,setDueDateAdded] = useState()
     const [showCompletedDropdown, setShowCompletedDropdown] = useState(false);
     const [email, setEmail] = useState('');
+    const [docId,setDocId] = useState('')
   const [password, setPassword] = useState('');
+  const [taskCompleted,setTaskCompleted] = useState();
     const [selectedItem, setSelectedItem] = useState<{
         id: string;
         name: string;
@@ -74,9 +99,10 @@ const TasksContextProvider = ({ children }: PropsWithChildren<{}>) => {
     const [editedText, setEditedText] = useState(selectedItem);
     const [initializing, setInitializing] = useState(true);
     const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
-    
+    const [dueDateTimeReminderText,setDueDateTimeReminderText] = useState('')
+    const [dueDateTimeDisplay,setDueDateTimeDisplay] = useState('')
     return (
-        <TasksContext.Provider value={{password, setPassword,email, setEmail,user, setUser,initializing, setInitializing,editedText, setEditedText,dueDateAdded,setDueDateAdded,myDayState,setMyDayState, myDay,setMyDay,showCompletedDropdown,setShowCompletedDropdown,dueDate, setDueDate, selectedDueDate, setSelectedDueDate, currentTaskName, setCurrentTaskName, allTasks, setAllTasks, setStarredTasks, starredTasks, star, setStar, tasks, setTasks, completedTasks, setCompletedTasks, starId, setStarId, selectedItem, setSelectedItem }}>
+        <TasksContext.Provider value={{taskCompleted,setTaskCompleted,captureDateTimeReminderTime,setCaptureDateTimeReminderTime,captureDateTimeReminderDate,setCaptureDateTimeReminderDate,dueDateTimeReminderDate,setDueDateTimeReminderDate,dueDateTimeDisplay,setDueDateTimeDisplay,dueDateTimeReminderDateFormatted,setDueDateTimeReminderDateFormatted,dueDateTimeReminderTime,setDueDateTimeReminderTime,dueDateTimeReminderText,setDueDateTimeReminderText,myDay,setMyDay,docId,setDocId,password, setPassword,email, setEmail,user, setUser,initializing, setInitializing,editedText, setEditedText,dueDateAdded,setDueDateAdded,myDayState,setMyDayState,showCompletedDropdown,setShowCompletedDropdown,dueDate, setDueDate, selectedDueDate, setSelectedDueDate, currentTaskName, setCurrentTaskName, allTasks, setAllTasks, setStarredTasks, starredTasks, star, setStar, tasks, setTasks, completedTasks, setCompletedTasks, starId, setStarId, selectedItem, setSelectedItem }}>
             {children}
         </TasksContext.Provider>
     )

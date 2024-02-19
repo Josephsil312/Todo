@@ -7,12 +7,12 @@ import {
   LayoutAnimation,
   SectionList,
   SafeAreaView,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  Alert
 } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring } from 'react-native-reanimated'
-import firestore from '@react-native-firebase/firestore';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withDelay, FadeIn, FadeOut, Easing, FlipInEasyX, FlipOutEasyX, StretchInX, StretchOutY, LightSpeedInRight, LightSpeedOutLeft, PinwheelIn, PinwheelOut, BounceIn, BounceOut, SlideInUp, SlideOutDown, SlideInDown, ZoomIn, ZoomOut, ZoomInDown, ZoomOutDown, ZoomInEasyUp, ZoomOutEasyUp, LightSpeedInLeft, LightSpeedOutRight } from 'react-native-reanimated'
+import firestore, { firebase } from '@react-native-firebase/firestore';
 import React, { useState, useRef, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import { HeadingText } from '../../Texts';
 import AddingTasks from './AddingTasks';
@@ -29,18 +29,22 @@ import { RectButton, GestureHandlerRootView, PanGestureHandler, Gesture, Gesture
 import { useTasks } from '../../TasksContextProvider';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { isAfter, isYesterday, subDays, isSameDay, isTomorrow, parse, isBefore, format, startOfToday } from 'date-fns';
+import { getFirestore, collection, addDoc } from '@react-native-firebase/firestore';
+import LottieView from 'lottie-react-native';
+
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
 
 const Tasks = ({ navigation }: Props) => {
-
   const refRBSheet = useRef<RBSheet>(null);
   const refEditableTask = useRef<RBSheet>(null);
+
+  const [completedTaskId, setCompletedTaskId] = useState(null);
   const [task, setTask] = useState('');
   const [isRBSheetOpen, setIsRBSheetOpen] = useState(false);
-  // const [rotationAnimation] = useState(new Animated.Value(0));
-  const { dueDateAdded,
+  
+  const {
     setDueDateAdded,
     showCompletedDropdown,
     myDayState,
@@ -51,41 +55,17 @@ const Tasks = ({ navigation }: Props) => {
     setAllTasks,
     selectedItem,
     setSelectedItem,
-    star,
-    starId,
-    setStarId,
-    editedText,
-    setEditedText } = useTasks();
+    setDocId,
+    dueDateTimeReminderTime,
+    dueDateTimeReminderDate,
+    setCaptureDateTimeReminderDate,
+    setCaptureDateTimeReminderTime,
+    setTaskCompleted
+   } = useTasks();
 
 
 
-  const Animate = () => {
-    LayoutAnimation.configureNext({
-      duration: 500,
-      create:
-      {
-        type: LayoutAnimation.Types.easeInEaseOut,
-        property: LayoutAnimation.Properties.opacity,
-      },
-      update:
-      {
-        type: LayoutAnimation.Types.easeInEaseOut,
-      }
-    });
-  }
-  // const datafromfirebase = async () => {
-  //   try {
-  //     const data = await firestore().collection('users').doc('0cfFPPHSip8zKQjDiD1j').get();
-  //     console.log('data from firebase',data._data.name)
-  //   } catch (err) {
-  //     console.log(err)
-  //   }
-  // }
-  // useEffect(() => {
-  //   datafromfirebase()
-  // }, [])
-  const swipeableRef = useRef(null);
-  // const width = useSharedValue('100%');
+
   const rightSwipe = ({ item, onDelete }) => {
 
     const renderRightActions = (dragX) => {
@@ -95,7 +75,7 @@ const Tasks = ({ navigation }: Props) => {
         extrapolate: 'clamp'
       });
       return (
-        <RectButton style={styles.rightAction} onPress={() => onDelete(item.id)}>
+        <RectButton style={styles.rightAction} onPress={() => onDelete(item.firestoreDocId)}>
           <Animated.Text
             style={[
               styles.actionText,
@@ -125,125 +105,99 @@ const Tasks = ({ navigation }: Props) => {
     );
   };
 
-  const pressed = useSharedValue(false);
+  const userCollection = firestore().collection('users');
 
-  const tap = Gesture.Tap()
-    .onBegin(() => {
-      pressed.value = true;
-    })
-    .onFinalize(() => {
-      pressed.value = false;
-    });
-
-  const animatedStyles = useAnimatedStyle(() => ({
-    backgroundColor: pressed.value ? '#5A69AF' : '',
-    transform: [{ scale: withSpring(pressed.value ? 0.8 : 1) }],
-  }));
 
   const handleAddTask = async () => {
     if (task.trim() !== '') {
-      const taskId = Date.now().toString();
-      const newTask = {
-        id: taskId,
-        name: task || editedText,
-        isCompleted: false,
-        isImportant: false,
-        dateSet: dueDate,
-        myDay: isSameDay(parse(dueDate, "dd/MM/yyyy", new Date()), startOfToday())
-      };
-      const updatedTasks = [newTask, ...allTasks];
-
       try {
-        await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
-        Animate()
-        setAllTasks(updatedTasks)
+        const newTask = {
+          name: task,
+          isCompleted: false,
+          isImportant: false,
+          dateSet: dueDate,
+          myDay: isSameDay(parse(dueDate, "dd/MM/yyyy", new Date()), startOfToday()),
+          timeReminder:dueDateTimeReminderTime,
+          dateReminder:dueDateTimeReminderDate,
+        };
         setTask('');
+         await userCollection.add({
+          ...newTask
+        })
+       
       } catch (error) {
-        console.error('Error saving tasks to AsyncStorage:', error);
+        console.error('Error adding task:', error);
+        
       }
     }
+  
   };
-  //tasks have to be retrieved, assigned to settasks and persisted
+ 
   useEffect(() => {
-    const loadTasks = async () => {
-      try {
-        const savedTasks = await AsyncStorage.getItem('tasks');
-        if (savedTasks) {
-          const parsedTasks = JSON.parse(savedTasks).map((task) => ({
-            ...task,
-            key: task.id,
-            isCompleted: !!task.isCompleted, // Parse completion state
-            isImportant: task.isImportant || false,
-            myDay: task.myDay || false
-          }));
-          setAllTasks(parsedTasks);
-        }
-      } catch (error) {
-        console.log('Error loading tasks from AsyncStorage:', error);
-      }
-    };
-    loadTasks();
+    const unsubscribe = userCollection // Replace 'tasks' with your collection name
+      .onSnapshot(snapshot => {
+        const newTasks = snapshot.docs.map(doc => ({
+          firestoreDocId: doc.id,
+          ...doc.data(),
+        }));
+        setAllTasks(newTasks);
+      });
+
+    return () => unsubscribe();
   }, []);
 
-  const deleteTask = async (id: String) => {
-    const updatedTasks = allTasks.filter((task) => task.id !== id);
+  const deleteTask =async (id) => {
     try {
-      await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
-      Animate()
-      setAllTasks(updatedTasks)
+      // Delete the task document from Firestore
+      await userCollection.doc(id).delete();
       setTask('');
     } catch (error) {
-      console.error('Error saving tasks to AsyncStorage:', error);
+      console.error('Error deleting task from Firestore:', error);
     }
   }
 
-  const handleCompleteTask = async (taskId: string) => {
+
+  const handleCompleteTask = async (firestoreDocId) => {
     try {
-      const updatedTasks = allTasks.map((task) =>
-        task.id === taskId ? { ...task, isCompleted: !task.isCompleted } : task
-      );
-      setAllTasks(updatedTasks);
-      Animate();
-      // Save updated tasks to AsyncStorage
-      await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
+      const taskRef = userCollection.doc(firestoreDocId)
+      await taskRef.set({ isCompleted: true }, { merge: true });
+      setCompletedTaskId(firestoreDocId);
+      console.log('Task completed successfully.');
     } catch (error) {
-      console.log('Error updating task:', error);
+      console.error('Error updating completed task:', error);
     }
-  };
+  }
 
   const toggleCompletedDropdown = () => {
-    Animate()
     setShowCompletedDropdown(!showCompletedDropdown);
   };
 
-  const toggleTask = async (taskId: string) => {
+  const toggleTask = async (firestoreDocId) => {
     try {
-      const updatedTasks = allTasks.map((task) =>
-        task.id === taskId ? { ...task, isCompleted: !task.isCompleted } : task
-      );
-      setAllTasks(updatedTasks);
-      Animate()
-      // Save updated tasks to AsyncStorage
-      await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
-    } catch (error) {
-      console.log('Error updating task:', error);
-    }
-  };
 
-  const starChange = async (taskId: string) => {
-    try {
-      // Directly update the isImportant property within the allTasks array
-      const updatedTasks = allTasks.map((task) =>
-        task.id === taskId ? { ...task, isImportant: !task.isImportant } : task
-      );
-      setAllTasks(updatedTasks);
-      // Save the updated tasks to AsyncStorage
-      await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
-      console.log('Star state and tasks saved to AsyncStorage');
+      const taskRef = userCollection.doc(firestoreDocId);
+      // show()
+      await taskRef.set({ isCompleted: false }, { merge: true });
+      console.log('Task toggled successfully.');
     } catch (error) {
-      console.error('Error saving star state and tasks:', error);
+      console.error('Error updating toggled task:', error);
     }
-  };
+  }
+
+  const starChange = async (firestoreDocId) => {
+    try {
+      // Get the reference to the task document in Firestore
+      const taskRef = userCollection.doc(firestoreDocId);
+      // Get the current value of isImportant from Firestore
+      const taskSnapshot = await taskRef.get();
+      const currentIsImportant = taskSnapshot.data()?.isImportant;
+      // Update the isImportant property in Firestore by toggling its value
+      await taskRef.update({ isImportant: !currentIsImportant });
+      console.log('Star state updated successfully.');
+    } catch (error) {
+      console.error('Error updating star state:', error);
+    }
+  }
 
   const openRBSheet = (item: any) => {
     if (refEditableTask?.current) {
@@ -259,9 +213,8 @@ const Tasks = ({ navigation }: Props) => {
     const parsedDate = parse(item.dateSet, "dd/MM/yyyy", new Date());
     const currentYear = new Date().getFullYear();
     const isCurrentYear = parsedDate.getFullYear() === currentYear;
-
     const iconColor = isBefore(parsedDate, currentDate) || isYesterday(parsedDate)
-      ? "red"
+      ? "#C02136"
       : isSameDay(parsedDate, currentDate)
         ? "#5A69AF" // Your original color for today
         : "grey";
@@ -290,24 +243,18 @@ const Tasks = ({ navigation }: Props) => {
     </>
     )
   }
-  const formattedDueDate = dueDateAdded
-    ? `Due on ${format(parse(dueDateAdded, 'dd/MM/yyyy', new Date()), 'EEE, MMM d')}`
-    : 'Add due date';
+
+  
+
 
   const sections = [
     { data: allTasks.filter((task) => !task.isCompleted) },
     { title: 'Completed Tasks', data: allTasks.filter((task) => task.isCompleted) },
   ];
 
-  const updateTaskName = (taskId: string, newName: string) => {
-    const updatedTasks = allTasks.map((task) =>
-      task.id === taskId ? { ...task, name: newName } : task
-    );
-    setAllTasks(updatedTasks);
-    // Update the task name in AsyncStorage if needed
-    // ...
-  };
-  console.log('alltasks from tasks', allTasks)
+  console.log('alltasks',allTasks)
+
+
 
   return (
     <>{isRBSheetOpen &&
@@ -321,76 +268,67 @@ const Tasks = ({ navigation }: Props) => {
     }
       <KeyboardAvoidingView style={styles.taskContainer} keyboardShouldPersistTaps='always'>
         <GestureHandlerRootView>
-          <PanGestureHandler>
-            <SectionList
-              sections={sections}
-              keyExtractor={item => item.id}
-              renderItem={({ item }) => (
-                <>
-                  <Swipeable renderRightActions={() => rightSwipe(item.id)}
-                    onSwipeableOpen={() => deleteTask(item.id)}
-                    ref={swipeableRef}
+          <SectionList
+            sections={sections}
+            keyExtractor={item => item.firestoreDocId}
+            renderItem={({ item }) => (
+              <>
+                <Swipeable renderRightActions={() => rightSwipe(item.firestoreDocId)}
+                  onSwipeableOpen={() => deleteTask(item.firestoreDocId)}
+                 
+                >
+                  <Animated.View entering={LightSpeedInLeft.duration(200).easing(Easing.ease)} exiting={LightSpeedOutRight.duration(200).easing(Easing.ease)}>
+                    <Pressable
+                      style={styles.incompletetasks}
+                      onPress={() => { openRBSheet(item.name); setTaskCompleted(item.isCompleted);setDocId(item.firestoreDocId); setMyDayState(item.myDay); setDueDateAdded(item.dateSet);setCaptureDateTimeReminderDate(item.dateReminder);setCaptureDateTimeReminderTime(item.timeReminder) }}
+                    >
 
-                  >
-
-                    <Animated.View style={styles.flatlistitem}>
-                      <Pressable
-                        style={styles.incompletetasks}
-                        onPress={() => { openRBSheet(item.name); setStarId(item.id); setMyDayState(item.myDay); setDueDateAdded(item.dateSet) }}
-                      >
-                        <View style={styles.icontextcontainer}>
-
-                          {item.isCompleted ? (
-                            <TouchableOpacity onPress={() => {
-                              toggleTask(item.id);
-                            }}>
-                              <GestureDetector gesture={tap}>
-                                <Animated.View style={animatedStyles}>
-                                  <Check name="checkcircle" size={23} color={'#5A69AF'} />
-                                </Animated.View>
-                              </GestureDetector>
-                            </TouchableOpacity>
-                          ) : (
-                            <TouchableOpacity onPress={() => handleCompleteTask(item.id)}>
-                              <GestureDetector gesture={tap}>
-                                <Animated.View style={animatedStyles}>
-                                  <Icon name="circle-thin" size={27} color="grey" />
-                                </Animated.View>
-                              </GestureDetector>
-                            </TouchableOpacity>
+                      <View style={styles.icontextcontainer}>
+                        {item.isCompleted ? (
+                          <TouchableOpacity onPress={() => {
+                            toggleTask(item.firestoreDocId);
+                          }}>
+                            <LottieView style={{ width: 45, height: 45, marginLeft: -10 }} 
+                            source={require('../../../../assets/animations/checktwo.json')} autoPlay loop={false} />
+                          </TouchableOpacity>
+                        ) : (
+                          <TouchableOpacity onPress={() => handleCompleteTask(item.firestoreDocId)}>
+                            {/* <Icon name="circle-thin" size={27} color="grey" style={{backgroundColor:'black'}}/>  */}
+                            <LottieView style={{ width: 45, height: 45, marginLeft: -10 }} source={require('../../../../assets/animations/circle.json')} autoPlay loop={false} />
+                          </TouchableOpacity>
+                        )}
+                        <View style={{ flexDirection: 'column', marginLeft: '2%', alignItems: 'flex-start' }}>
+                          <HeadingText
+                            textString={item.name}
+                            fontSize={17}
+                            fontFamily="SuisseIntl"
+                            textDecorationLine={item.isCompleted ? "line-through" : ''}
+                           
+                          
+                          />
+                          
+                          {item.dateSet && (
+                            <>
+                              {renderDateConditional(item)}
+                            </>
                           )}
-                          <View style={{ flexDirection: 'column', marginLeft: 15, }}>
-
-                            <HeadingText
-                              textString={item.name.trim()}
-                              fontSize={17}
-                              fontWeight="500"
-                              fontFamily="SuisseIntl"
-                              textDecorationLine={item.isCompleted ? "line-through" : ''}
-                            />
-
-                            {item.dateSet && (
-                              <>
-                                {renderDateConditional(item)}
-                              </>
-                            )}
-
-                          </View>
                         </View>
-                        <Pressable key={item.id} onPress={() => starChange(item.id)}>
-                          {item.isImportant ? <Iconfromentypo name="star" size={22} color="grey" style={{ color: '#5A69AF' }} />
-                            : <Iconn name="star" size={25} color="grey" />
-                          }
-                        </Pressable>
-                      </Pressable>
-                    </Animated.View>
 
-                  </Swipeable>
-                </>
-              )}
-              renderSectionHeader={({ section: { title } }) => {
-                if (title) {
-                  return (
+                      </View>
+                      <Pressable key={item.firestoreDocId} onPress={() => starChange(item.firestoreDocId)}>
+                        {item.isImportant ? <Iconfromentypo name="star" size={24} color="grey" style={{ color: '#5A69AF' }} />
+                          : <Iconn name="star" size={27} color="grey" />
+                        }
+                      </Pressable>
+
+                    </Pressable>
+                  </Animated.View>
+                </Swipeable>
+              </>
+            )}
+            renderSectionHeader={({ section: { title } }) => {
+              if (title) {
+                return (
                     <Pressable onPress={toggleCompletedDropdown} style={styles.completedlistlength}>
                       {/* <Animated.View style={[animatedStyle]}> */}
                       <Iconchev name="chevron-small-right" size={20} color="white" />
@@ -398,79 +336,77 @@ const Tasks = ({ navigation }: Props) => {
                       <HeadingText
                         textString={`Completed ${allTasks.filter((task) => task.isCompleted).length}`}
                         fontSize={16}
-                        fontWeight="500"
                         fontFamily="SuisseIntl"
                         color='white'
                       />
                     </Pressable>
-                  );
-                } else {
-                  return null;
-                }
-              }}
-            />
-          </PanGestureHandler>
 
-          <RBSheet
-            ref={refRBSheet}
-            closeOnDragDown={false}
-            closeOnPressMask={true}
-            animationType="fade"
-            height={70}
-            isOpen={isRBSheetOpen}
-            onClose={() => setIsRBSheetOpen(false)}
-            customStyles={{
-              wrapper: {
-                backgroundColor: 'transparent',
-              },
-              draggableIcon: {
-                backgroundColor: '#000',
-
-              },
-              container: {
-                height: '22%',
+                );
+              } else {
+                return null;
               }
-            }}>
-            <AddingTasks
-              handleAddTask={handleAddTask}
-              task={task}
-              setTask={setTask}
-              color={'#5A69AF'}
-            />
-          </RBSheet>
-
-
-          <RBSheet
-            ref={refEditableTask}
-            closeOnDragDown={false}
-            closeOnPressMask={true}
-            animationType="slide"
-            height={70}
-            isOpen={isRBSheetOpen}
-            onClose={() => setIsRBSheetOpen(false)}
-            customStyles={{
-              wrapper: {
-                backgroundColor: 'transparent',
-              },
-              draggableIcon: {
-                backgroundColor: '#000',
-              },
-              container: {
-                height: '70%',
-              }
-            }}>
-            <Editable
-              star={star}
-              tasks={allTasks}
-              navigation={navigation}
-              selectedItem={selectedItem}
-              starId={starId}
-              myDayState={myDayState}
-              formattedDueDate={formattedDueDate}
-              updateTaskName={updateTaskName} />
-          </RBSheet>
+            }}
+          />
         </GestureHandlerRootView>
       </KeyboardAvoidingView>
+
+      <RBSheet
+        ref={refRBSheet}
+        closeOnDragDown={false}
+        closeOnPressMask={true}
+        animationType="fade"
+        height={70}
+        isOpen={isRBSheetOpen}
+        onClose={() => setIsRBSheetOpen(false)}
+        customStyles={{
+          wrapper: {
+            backgroundColor: 'transparent',
+          },
+          draggableIcon: {
+            backgroundColor: '#000',
+
+          },
+          container: {
+            height: '20%',
+          }
+        }}>
+        <AddingTasks
+          handleAddTask={handleAddTask}
+          task={task}
+          setTask={setTask}
+          color={'#5A69AF'}
+        />
+      </RBSheet>
+
+
+      <RBSheet
+        ref={refEditableTask}
+        closeOnDragDown={false}
+        closeOnPressMask={true}
+        animationType="slide"
+        height={70}
+        isOpen={isRBSheetOpen}
+        onClose={() => setIsRBSheetOpen(false)}
+        customStyles={{
+          wrapper: {
+            backgroundColor: 'transparent',
+          },
+          draggableIcon: {
+            backgroundColor: '#000',
+          },
+          container: {
+            height: '90%',
+          }
+        }}>
+        <Editable
+          selectedItem={selectedItem}
+          myDayState={myDayState}
+          setIsRBSheetOpen={setIsRBSheetOpen}
+          color={'#5A69AF'}
+       
+        />
+      </RBSheet>
+
 
       <View
         style={styles.addicon}>
@@ -506,9 +442,14 @@ const styles = StyleSheet.create({
   icontextcontainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+    justifyContent: 'flex-start',
+    height: 25,
+    // flexWrap:'nowrap'
+    // backgroundColor:'red'
   },
   overdueTag: {
-    color: 'red',
+    color: '#C02136',
     fontSize: 13,
     fontWeight: '400',
   },
@@ -549,13 +490,6 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     width: 'auto'
   },
-
-  flatlistitem: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    height: 70
-  },
-
   rightAction: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -575,9 +509,9 @@ const styles = StyleSheet.create({
     marginBottom: 2,
     justifyContent: 'space-between',
     flexDirection: 'row',
-
+    flexWrap:'wrap',
     // Background color for neumorphic effect
-    backgroundColor: '#f5f5f5', // Adjust as needed
+    backgroundColor: 'white', // Adjust as needed
 
     // Simulate soft lighting and depth
     boxShadow: [
@@ -601,7 +535,7 @@ const styles = StyleSheet.create({
       },
     ],
 
-    width: '100%',
+    flex: 1
   },
   addicon: {
     position: 'absolute',
