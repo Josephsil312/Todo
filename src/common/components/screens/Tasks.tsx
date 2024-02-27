@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Alert
 } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withDelay, FadeIn, FadeOut, Easing, FlipInEasyX, FlipOutEasyX, StretchInX, StretchOutY, LightSpeedInRight, LightSpeedOutLeft, PinwheelIn, PinwheelOut, BounceIn, BounceOut, SlideInUp, SlideOutDown, SlideInDown, ZoomIn, ZoomOut, ZoomInDown, ZoomOutDown, ZoomInEasyUp, ZoomOutEasyUp, LightSpeedInLeft, LightSpeedOutRight } from 'react-native-reanimated'
+import Animated, { Easing, LightSpeedInLeft, LightSpeedOutRight } from 'react-native-reanimated'
 import firestore, { firebase } from '@react-native-firebase/firestore';
 import React, { useState, useRef, useEffect } from 'react';
 import RBSheet from 'react-native-raw-bottom-sheet';
@@ -31,7 +31,10 @@ import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { isAfter, isYesterday, subDays, isSameDay, isTomorrow, parse, isBefore, format, startOfToday } from 'date-fns';
 import { getFirestore, collection, addDoc } from '@react-native-firebase/firestore';
 import LottieView from 'lottie-react-native';
-
+import Bell from 'react-native-vector-icons/EvilIcons';
+import notifee, { EventType, TimestampTrigger, TriggerType } from '@notifee/react-native';
+import Iconfont from 'react-native-vector-icons/Fontisto';
+import SwipeableRow from './SwipableRow';
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
@@ -43,7 +46,8 @@ const Tasks = ({ navigation }: Props) => {
   const [completedTaskId, setCompletedTaskId] = useState(null);
   const [task, setTask] = useState('');
   const [isRBSheetOpen, setIsRBSheetOpen] = useState(false);
-  
+  const [editableModal, setEditableModal] = useState(false)
+  const [notificationId, setNotificationId] = useState('');
   const {
     setDueDateAdded,
     showCompletedDropdown,
@@ -61,49 +65,46 @@ const Tasks = ({ navigation }: Props) => {
     setCaptureDateTimeReminderDate,
     setCaptureDateTimeReminderTime,
     setTaskCompleted
-   } = useTasks();
+  } = useTasks();
 
+  // const rightSwipe = ({ item, onDelete }) => {
 
+  //   const renderRightActions = (dragX) => {
+  //     const trans = dragX.interpolate({
+  //       inputRange: [-100, 0],
+  //       outputRange: [0, 1],
+  //       extrapolate: 'clamp'
+  //     });
+  //     return (
+  //       <RectButton style={styles.rightAction} onPress={() => onDelete(item.firestoreDocId)}>
+  //         <Animated.Text
+  //           style={[
+  //             styles.actionText,
+  //             {
+  //               transform: [{ translateX: 100 }],
+  //             },
+  //           ]}
+  //         >
+  //           Delete
+  //         </Animated.Text>
+  //       </RectButton>
+  //     );
+  //   };
 
+  //   return (
+  //     <Swipeable renderRightActions={renderRightActions}>
+  //       <View style={{ flex: 1 }}>
+  //         <Animated.View style={{
+  //           width: 500,
+  //           flex: 1,
+  //         }}>
+  //           {/* <Text>{item.name}</Text> */}
+  //         </Animated.View>
+  //       </View>
 
-  const rightSwipe = ({ item, onDelete }) => {
-
-    const renderRightActions = (dragX) => {
-      const trans = dragX.interpolate({
-        inputRange: [-100, 0],
-        outputRange: [0, 1],
-        extrapolate: 'clamp'
-      });
-      return (
-        <RectButton style={styles.rightAction} onPress={() => onDelete(item.firestoreDocId)}>
-          <Animated.Text
-            style={[
-              styles.actionText,
-              {
-                transform: [{ translateX: 100 }],
-              },
-            ]}
-          >
-            Delete
-          </Animated.Text>
-        </RectButton>
-      );
-    };
-
-    return (
-      <Swipeable renderRightActions={renderRightActions}>
-        <View style={{ flex: 1 }}>
-          <Animated.View style={{
-            width: 500,
-            flex: 1,
-          }}>
-            {/* <Text>{item.name}</Text> */}
-          </Animated.View>
-        </View>
-
-      </Swipeable>
-    );
-  };
+  //     </Swipeable>
+  //   );
+  // };
 
   const userCollection = firestore().collection('users');
 
@@ -117,24 +118,100 @@ const Tasks = ({ navigation }: Props) => {
           isImportant: false,
           dateSet: dueDate,
           myDay: isSameDay(parse(dueDate, "dd/MM/yyyy", new Date()), startOfToday()),
-          timeReminder:dueDateTimeReminderTime,
-          dateReminder:dueDateTimeReminderDate,
+          timeReminder: dueDateTimeReminderTime,
+          dateReminder: dueDateTimeReminderDate,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         setTask('');
-         await userCollection.add({
+        await userCollection.add({
           ...newTask
         })
-       
+
       } catch (error) {
         console.error('Error adding task:', error);
-        
+
       }
+
     }
-  
+    // onCreateTriggerNotification(dueDateTimeReminderDate, dueDateTimeReminderTime)
+    if (dueDateTimeReminderDate.trim() !== '' && dueDateTimeReminderTime.trim() !== '') {
+      onDisplayNotification(dueDateTimeReminderDate, dueDateTimeReminderTime, task);
+    }
+
   };
- 
+
+  async function onDisplayNotification(dueDateTimeReminderDatee, dueDateTimeReminderTimee, taskName) {
+    // Request permissions (required for iOS)
+    try {
+      await notifee.requestPermission()
+      const dateParts = dueDateTimeReminderDatee.split('/');
+      const timeParts = dueDateTimeReminderTimee.split(':');
+      const year = parseInt(dateParts[2], 10);
+      const month = parseInt(dateParts[1], 10) - 1; // Adjust for 0-index
+      const day = parseInt(dateParts[0], 10);
+      const hours = parseInt(timeParts[0], 10);
+      const minutes = parseInt(timeParts[1], 10);
+
+      const notificationDateTime = new Date(year, month, day, hours, minutes);
+     
+     
+      const trigger: TimestampTrigger = {
+        type: TriggerType.TIMESTAMP,
+        timestamp: notificationDateTime.getTime(), // Scheduled time
+      };
+
+      const channelId = await notifee.createChannel({
+        id: 'default',
+        name: 'Default Channel',
+      });
+
+      // Display a notification
+
+       await notifee.createTriggerNotification(
+        {
+          title: 'Reminder',
+          body: `${taskName}`,
+          android: {
+            channelId,
+          },
+          
+        },
+        trigger, 
+      );
+      // setNotificationId(id);
+      console.log('notificationid',notificationId)
+    } catch (error) {
+      console.log('error in notification', error)
+    }
+
+  }
+
+  async function onBackgroundEvent(event) {
+    if (event.type === EventType.DISMISSED) {
+      console.log('User dismissed notification', event.notification);
+    } else if (event.type === EventType.PRESS) {
+      console.log('User pressed notification', event.notification);
+      // Additional handling for press event
+    }
+    // Handle other event types as needed
+  }
+  notifee.onBackgroundEvent(onBackgroundEvent);
+  
+  // useEffect(() => {
+  //   const unsubscribe = userCollection // Replace 'tasks' with your collection name
+  //     .onSnapshot(snapshot => {
+  //       const newTasks = snapshot.docs.map(doc => ({
+  //         firestoreDocId: doc.id,
+  //         ...doc.data(),
+  //       }));
+  //       setAllTasks(newTasks);
+  //     });
+
+  //   return () => unsubscribe();
+  // }, []);
   useEffect(() => {
-    const unsubscribe = userCollection // Replace 'tasks' with your collection name
+    const unsubscribe = userCollection
+      .orderBy('createdAt', 'desc') // Assuming 'createdAt' is your timestamp field
       .onSnapshot(snapshot => {
         const newTasks = snapshot.docs.map(doc => ({
           firestoreDocId: doc.id,
@@ -142,13 +219,12 @@ const Tasks = ({ navigation }: Props) => {
         }));
         setAllTasks(newTasks);
       });
-
+  
     return () => unsubscribe();
   }, []);
-
-  const deleteTask =async (id) => {
+  
+  const deleteTask = async (id) => {
     try {
-      // Delete the task document from Firestore
       await userCollection.doc(id).delete();
       setTask('');
     } catch (error) {
@@ -157,12 +233,18 @@ const Tasks = ({ navigation }: Props) => {
   }
 
 
+
   const handleCompleteTask = async (firestoreDocId) => {
     try {
       const taskRef = userCollection.doc(firestoreDocId)
+      console.log('taskRef',taskRef)
       await taskRef.set({ isCompleted: true }, { merge: true });
       setCompletedTaskId(firestoreDocId);
+      
       console.log('Task completed successfully.');
+      
+        // await notifee.cancelTriggerNotification(notificationId);
+      
     } catch (error) {
       console.error('Error updating completed task:', error);
     }
@@ -216,11 +298,15 @@ const Tasks = ({ navigation }: Props) => {
     const iconColor = isBefore(parsedDate, currentDate) || isYesterday(parsedDate)
       ? "#C02136"
       : isSameDay(parsedDate, currentDate)
-        ? "#5A69AF" // Your original color for today
+        ? "grey" // Your original color for today
         : "grey";
+   
+    
     return (<>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Calendarr name="calendar" size={15} color={iconColor} style={{ marginRight: 3 }} />
+      <View style={{ flexDirection: 'row', alignItems: 'center',marginRight:5 }}>
+
+        <Calendarr name="calendar" size={15} color={iconColor} style={{marginRight:3}} />
+
         {isBefore(parse(item.dateSet, 'dd/MM/yyyy', new Date()), startOfToday()) ? (
           <Text style={styles.overdueTag}>
             {isYesterday(parse(item.dateSet, 'dd/MM/yyyy', new Date())) ? (
@@ -239,12 +325,13 @@ const Tasks = ({ navigation }: Props) => {
             :
             <Text style={styles.dueTomorrowTag}>{format(parsedDate, "EEE, MMM d")}</Text>
         )}
+        {/* {hasReminder && <Text>Reminder</Text>} */}
       </View>
     </>
     )
   }
 
-  
+
 
 
   const sections = [
@@ -252,10 +339,8 @@ const Tasks = ({ navigation }: Props) => {
     { title: 'Completed Tasks', data: allTasks.filter((task) => task.isCompleted) },
   ];
 
-  console.log('alltasks',allTasks)
-
-
-
+  console.log('alltasks', allTasks)
+   
   return (
     <>{isRBSheetOpen &&
       <View
@@ -273,14 +358,12 @@ const Tasks = ({ navigation }: Props) => {
             keyExtractor={item => item.firestoreDocId}
             renderItem={({ item }) => (
               <>
-                <Swipeable renderRightActions={() => rightSwipe(item.firestoreDocId)}
-                  onSwipeableOpen={() => deleteTask(item.firestoreDocId)}
-                 
+                <SwipeableRow onDelete={() => deleteTask(item.firestoreDocId)}            
                 >
                   <Animated.View entering={LightSpeedInLeft.duration(200).easing(Easing.ease)} exiting={LightSpeedOutRight.duration(200).easing(Easing.ease)}>
                     <Pressable
                       style={styles.incompletetasks}
-                      onPress={() => { openRBSheet(item.name); setTaskCompleted(item.isCompleted);setDocId(item.firestoreDocId); setMyDayState(item.myDay); setDueDateAdded(item.dateSet);setCaptureDateTimeReminderDate(item.dateReminder);setCaptureDateTimeReminderTime(item.timeReminder) }}
+                      onPress={() => { openRBSheet(item.name); setEditableModal(true); setTaskCompleted(item.isCompleted); setDocId(item.firestoreDocId); setMyDayState(item.myDay); setDueDateAdded(item.dateSet); setCaptureDateTimeReminderDate(item.dateReminder); setCaptureDateTimeReminderTime(item.timeReminder) }}
                     >
 
                       <View style={styles.icontextcontainer}>
@@ -288,58 +371,79 @@ const Tasks = ({ navigation }: Props) => {
                           <TouchableOpacity onPress={() => {
                             toggleTask(item.firestoreDocId);
                           }}>
-                            <LottieView style={{ width: 45, height: 45, marginLeft: -10 }} 
-                            source={require('../../../../assets/animations/checktwo.json')} autoPlay loop={false} />
+                            <Check name="checkcircle" size={23} color={'#71A6D2'} />
                           </TouchableOpacity>
                         ) : (
                           <TouchableOpacity onPress={() => handleCompleteTask(item.firestoreDocId)}>
                             {/* <Icon name="circle-thin" size={27} color="grey" style={{backgroundColor:'black'}}/>  */}
-                            <LottieView style={{ width: 45, height: 45, marginLeft: -10 }} source={require('../../../../assets/animations/circle.json')} autoPlay loop={false} />
+                            <Icon name="circle-thin" size={27} color="grey" />
                           </TouchableOpacity>
                         )}
-                        <View style={{ flexDirection: 'column', marginLeft: '2%', alignItems: 'flex-start' }}>
+                        <View style={{ flexDirection: 'column', marginLeft: '2%', alignItems: 'flex-start',paddingLeft:10 }}>
                           <HeadingText
                             textString={item.name}
                             fontSize={17}
                             fontFamily="SuisseIntl"
                             textDecorationLine={item.isCompleted ? "line-through" : ''}
-                           
-                          
+                            
                           />
-                          
-                          {item.dateSet && (
-                            <>
-                              {renderDateConditional(item)}
-                            </>
-                          )}
+                          <View style={{ flexDirection: 'row',alignItems:'center' }}>
+                            {item.dateSet && (
+                              <>
+                                {renderDateConditional(item)}
+                              </>
+
+                            )}
+                            {item.myDay &&  <Iconfont name="day-sunny" size={15} color = {'grey'} style={{marginRight:5}}/>}
+                            {item.myDay && <HeadingText
+                              textString={'My Day'}
+                              fontSize={13}
+                              fontFamily="SuisseIntl"
+                              color='grey'
+                              fontWeight={400}
+                              marginRight={6}
+                            />
+                            }
+                            {(item.timeReminder || item.dateReminder) && <Bell name="bell" size={15} color = {'grey'} style={{marginRight:5}} />}
+                            {/* {(item.timeReminder || item.dateReminder) && 
+                             <HeadingText
+                              textString={'Reminder'}
+                              fontSize={13}
+                              fontFamily="SuisseIntl"
+                              color='grey'
+                              fontWeight={400}
+                              marginRight={6}
+                            />} */}
+                          </View>
+
                         </View>
 
                       </View>
-                      <Pressable key={item.firestoreDocId} onPress={() => starChange(item.firestoreDocId)}>
-                        {item.isImportant ? <Iconfromentypo name="star" size={24} color="grey" style={{ color: '#5A69AF' }} />
+                      <Pressable key={item.firestoreDocId} onPress={() => starChange(item.firestoreDocId)} style = {{paddingLeft:20}}>
+                        {item.isImportant ? <Iconfromentypo name="star" size={24} color="grey" style={{ color: '#71A6D2' }} />
                           : <Iconn name="star" size={27} color="grey" />
                         }
                       </Pressable>
 
                     </Pressable>
                   </Animated.View>
-                </Swipeable>
+                </SwipeableRow>
               </>
             )}
             renderSectionHeader={({ section: { title } }) => {
               if (title) {
                 return (
-                    <Pressable onPress={toggleCompletedDropdown} style={styles.completedlistlength}>
-                      {/* <Animated.View style={[animatedStyle]}> */}
-                      <Iconchev name="chevron-small-right" size={20} color="white" />
-                      {/* </Animated.View> */}
-                      <HeadingText
-                        textString={`Completed ${allTasks.filter((task) => task.isCompleted).length}`}
-                        fontSize={16}
-                        fontFamily="SuisseIntl"
-                        color='white'
-                      />
-                    </Pressable>
+                  <Pressable onPress={toggleCompletedDropdown} style={styles.completedlistlength}>
+                    {/* <Animated.View style={[animatedStyle]}> */}
+                    <Iconchev name="chevron-small-right" size={20} color="white" />
+                    {/* </Animated.View> */}
+                    <HeadingText
+                      textString={`Completed ${allTasks.filter((task) => task.isCompleted).length}`}
+                      fontSize={16}
+                      fontFamily="SuisseIntl"
+                      color='white'
+                    />
+                  </Pressable>
 
                 );
               } else {
@@ -374,7 +478,7 @@ const Tasks = ({ navigation }: Props) => {
           handleAddTask={handleAddTask}
           task={task}
           setTask={setTask}
-          color={'#5A69AF'}
+          color={'#71A6D2'}
         />
       </RBSheet>
 
@@ -402,8 +506,8 @@ const Tasks = ({ navigation }: Props) => {
           selectedItem={selectedItem}
           myDayState={myDayState}
           setIsRBSheetOpen={setIsRBSheetOpen}
-          color={'#5A69AF'}
-       
+          color={'#71A6D2'}
+
         />
       </RBSheet>
 
@@ -417,7 +521,7 @@ const Tasks = ({ navigation }: Props) => {
               setIsRBSheetOpen(true);
             }
           }}>
-          <Plusicon name="pluscircle" size={55} color="#cec9fc" style={{
+          <Plusicon name="pluscircle" size={55} color="#C7E6FA" style={{
             shadowColor: '#444167', elevation: 6, shadowOpacity: 0.6,
             shadowRadius: 20,
           }} />
@@ -429,11 +533,6 @@ const Tasks = ({ navigation }: Props) => {
 };
 
 const styles = StyleSheet.create({
-  image: {
-    width: 20,
-    height: 20,
-    marginRight: 13,
-  },
   completedlistlength: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -444,18 +543,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     justifyContent: 'flex-start',
-    height: 25,
-    // flexWrap:'nowrap'
-    // backgroundColor:'red'
+    maxHeight: 'auto',
+    padding:2
   },
   overdueTag: {
     color: '#C02136',
     fontSize: 13,
     fontWeight: '400',
+    marginRight:3
   },
   taskContainer: {
     flexGrow: 1,
-    backgroundColor: '#5A69AF',
+    backgroundColor: '#71A6D2',
     padding: 10,
   },
   modalContainer: {
@@ -470,72 +569,43 @@ const styles = StyleSheet.create({
     maxWidth: 300, // Set the maximum width of the modal
   },
   dueTodayTag: {
-    // Adjust appearance as desired, e.g.,
-    color: '#5A69AF',
+    color: 'grey',
     borderRadius: 5,
     fontSize: 13,
     fontWeight: '400',
-    width: 'auto'
-  },
-  mydayTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: 100,
-    justifyContent: 'space-between'
+    width: 'auto',
+    marginRight:6
   },
   dueTomorrowTag: {
     color: 'grey',
     borderRadius: 5,
     fontSize: 13,
     fontWeight: '400',
-    width: 'auto'
+    width: 'auto',
+    marginRight:3
   },
-  rightAction: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#dd2c00',
-    flex: 1,
-  },
-  actionText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
+  
   incompletetasks: {
-    // Remove elevation and shadow properties
-    paddingVertical: 20,
+    shadowColor: '#005F8D',
+    backgroundColor: 'white',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.6,
+    shadowRadius: 20,
     paddingHorizontal: 10,
-    borderRadius: 5,
+    borderRadius: 8,
+    flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 2,
     justifyContent: 'space-between',
-    flexDirection: 'row',
-    flexWrap:'wrap',
-    // Background color for neumorphic effect
-    backgroundColor: 'white', // Adjust as needed
+    elevation: 4,
+    borderWidth: 0.8,
+    borderColor: '#004364',
+    paddingTop:9,
+    paddingBottom:9,
 
-    // Simulate soft lighting and depth
-    boxShadow: [
-      {
-        offset: {
-          width: 0,
-          height: 2,
-        },
-        color: '#fff', // Lighter shadow on top
-        blurRadius: 10,
-        spreadRadius: -5, // Expand inward for pressed effect
-      },
-      {
-        offset: {
-          width: 0,
-          height: -2,
-        },
-        color: '#ccc', // Darker shadow below
-        blurRadius: 10,
-        spreadRadius: 2, // Expand outward for raised effect
-      },
-    ],
-
-    flex: 1
   },
   addicon: {
     position: 'absolute',

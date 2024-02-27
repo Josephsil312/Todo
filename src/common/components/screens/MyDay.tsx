@@ -12,7 +12,7 @@ import RBSheet from 'react-native-raw-bottom-sheet';
 import AddingTasks from './AddingTasks';
 import Calendarr from 'react-native-vector-icons/EvilIcons';
 import Check from 'react-native-vector-icons/AntDesign';
-import { isAfter, isYesterday, subDays, isSameDay, isTomorrow, parse, isBefore, format, startOfToday } from 'date-fns';
+import { isAfter, isYesterday, subDays, isSameDay, isTomorrow, parse, isBefore, format, startOfToday, isToday } from 'date-fns';
 import { RectButton, GestureHandlerRootView, PanGestureHandler, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, LightSpeedOutRight, LightSpeedInLeft } from 'react-native-reanimated'
@@ -125,7 +125,10 @@ const MyDay = ({ navigation }: Props) => {
 
     return () => unsubscribe();
   }, []);
-
+  const todayTasks = allTasks.filter((task) => {
+    const taskDate = parse(task.dateSet, "dd/MM/yyyy", new Date());
+    return isToday(taskDate);
+  });
 
   const renderDateConditional = (item) => {
     const currentDate = startOfToday();
@@ -273,7 +276,7 @@ const MyDay = ({ navigation }: Props) => {
   const sections = [
     {
       data: allTasks.filter(
-        (task) => ((!task.isCompleted && task.myDay && task.myDay))
+        (task) => ((!task.isCompleted && task.myDay))
       ),
     },
     { title: 'Completed Tasks', data: allTasks.filter((task) => (task.isCompleted === true && task.myDay)) },
@@ -343,7 +346,7 @@ const MyDay = ({ navigation }: Props) => {
                           </View>
                         </View>
                         <Pressable key={item.firestoreDocId} onPress={() => starChange(item.firestoreDocId)}>
-                          {item.isImportant ? <Iconfromentypo name="star" size={22} color="grey" style={{ color: '#5A69AF' }} />
+                          {item.isImportant ? <Iconfromentypo name="star" size={22} color="grey" style={{ color: '#79015B' }} />
                             : <Iconn name="star" size={25} color="grey" />
                           }
                         </Pressable>
@@ -433,7 +436,7 @@ const MyDay = ({ navigation }: Props) => {
         <Plusicon
           name="pluscircle"
           size={55}
-          color="#8FD5A6"
+          color="#FE9AE5"
           style={{
             shadowColor: '#444167',
             elevation: 6,
@@ -473,7 +476,7 @@ const styles = StyleSheet.create({
   },
   taskContainer: {
     flexGrow: 1,
-    backgroundColor: '#0D5D56',
+    backgroundColor: '#79015B',
     padding: 10,
 
   },

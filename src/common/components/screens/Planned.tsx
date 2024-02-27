@@ -277,7 +277,7 @@ const Planned = ({ navigation }: Props) => {
                           </View>
                         </View>
                         <Pressable key={item.firestoreDocId} onPress={() => starChange(item.firestoreDocId)}>
-                          {item.isImportant ? <Iconfromentypo name="star" size={22} color="grey" style={{ color: '#004700' }} />
+                          {item.isImportant ? <Iconfromentypo name="star" size={22} color="grey" style={{ color: '#037754' }} />
                             : <Iconn name="star" size={25} color="grey" />
                           }
                         </Pressable>
@@ -347,7 +347,7 @@ const Planned = ({ navigation }: Props) => {
         <Plusicon
           name="pluscircle"
           size={55}
-          color="#004700"
+          color="#9CFCDF"
           style={{
             shadowColor: '#444167',
             elevation: 6,
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
   },
   taskContainer: {
     flexGrow: 1,
-    backgroundColor: '#A663CC',
+    backgroundColor: '#037754',
     padding: 10,
 
   },

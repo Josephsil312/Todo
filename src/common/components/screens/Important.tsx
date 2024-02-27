@@ -18,6 +18,10 @@ import { RectButton, GestureHandlerRootView, PanGestureHandler, Gesture, Gesture
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, LightSpeedInLeft, LightSpeedOutRight, Easing } from 'react-native-reanimated'
 import LottieView from 'lottie-react-native';
+import Check from 'react-native-vector-icons/AntDesign';
+import Iconfont from 'react-native-vector-icons/Fontisto';
+import Bell from 'react-native-vector-icons/EvilIcons';
+import SwipeableRow from './SwipableRow';
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
@@ -56,9 +60,10 @@ const Important = ({ navigation }: Props) => {
           myDay: isSameDay(parse(dueDate, "dd/MM/yyyy", new Date()), startOfToday()),
           timeReminder:dueDateTimeReminderTime,
           dateReminder:dueDateTimeReminderDate,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
         }
         setTask('');
-        const docRef= await userCollection.add({
+        await userCollection.add({
           ...newTask
         })
       } catch (e) {
@@ -67,9 +72,22 @@ const Important = ({ navigation }: Props) => {
     }
   }
   //tasks have to be retrieved, assigned to settasks and persisted
+  // useEffect(() => {
+  //   const unsubscribe = firestore()
+  //     .collection('users') // Replace 'tasks' with your collection name
+  //     .onSnapshot(snapshot => {
+  //       const newTasks = snapshot.docs.map(doc => ({
+  //         firestoreDocId: doc.id,
+  //         ...doc.data(),
+  //       }));
+  //       setAllTasks(newTasks);
+  //     });
+
+  //   return () => unsubscribe();
+  // }, []);
   useEffect(() => {
-    const unsubscribe = firestore()
-      .collection('users') // Replace 'tasks' with your collection name
+    const unsubscribe = userCollection
+      .orderBy('createdAt', 'desc') // Assuming 'createdAt' is your timestamp field
       .onSnapshot(snapshot => {
         const newTasks = snapshot.docs.map(doc => ({
           firestoreDocId: doc.id,
@@ -77,7 +95,7 @@ const Important = ({ navigation }: Props) => {
         }));
         setAllTasks(newTasks);
       });
-
+  
     return () => unsubscribe();
   }, []);
 
@@ -223,8 +241,7 @@ const Important = ({ navigation }: Props) => {
           ]} keyExtractor={item => item.firestoreDocId}
             renderItem={({ item }) => (
               <>
-                <Swipeable renderRightActions={() => rightSwipe(item.firestoreDocId)}
-                  onSwipeableOpen={() => deleteTask(item.firestoreDocId)}
+                <SwipeableRow onDelete={() => deleteTask(item.firestoreDocId)}            
                 >
                   <Animated.View style={styles.flatlistitem} entering={LightSpeedInLeft.duration(200).easing(Easing.ease)} exiting={LightSpeedOutRight.duration(200).easing(Easing.ease)}>
                     <Pressable
@@ -233,7 +250,7 @@ const Important = ({ navigation }: Props) => {
                     >
                       <View style={styles.icontextcontainer}>
                         <TouchableOpacity onPress={() => { backToCompleted(item.firestoreDocId) }}>
-                          <LottieView style={{ width: 45, height: 45, marginLeft: -10 }} source={require('../../../../assets/animations/circle.json')} autoPlay loop={false} />
+                        <Check name="checkcircle" size={23} color={'#71A6D2'} />
                         </TouchableOpacity>
                         <View style={{ flexDirection: 'column', marginLeft: 15 }}>
                           <HeadingText
@@ -246,12 +263,23 @@ const Important = ({ navigation }: Props) => {
                               {renderDateConditional(item)}
                             </>
                           )}
+                          {item.myDay &&  <Iconfont name="day-sunny" size={15} color = {'grey'} style={{marginRight:5}}/>}
+                            {item.myDay && <HeadingText
+                              textString={'My Day'}
+                              fontSize={13}
+                              fontFamily="SuisseIntl"
+                              color='grey'
+                              fontWeight={400}
+                              marginRight={6}
+                            />
+                            }
+                            {(item.timeReminder || item.dateReminder) && <Bell name="bell" size={15} color = {'grey'} style={{marginRight:5}} />}
                         </View>
                       </View>
                       <Iconfromentypo name="star" size={22} color="grey" style={{ color: '#971c3d' }} onPress={() => backToTask(item.firestoreDocId)} />
                     </Pressable>
                   </Animated.View>
-                </Swipeable>
+                </SwipeableRow>
               </>
             )} />
 
@@ -340,11 +368,7 @@ const Important = ({ navigation }: Props) => {
 export default Important;
 
 const styles = StyleSheet.create({
-  image: {
-    width: 20,
-    height: 20,
-    marginRight: 13,
-  },
+
   completedlistlength: {
     flexDirection: 'row',
     alignItems: 'center',

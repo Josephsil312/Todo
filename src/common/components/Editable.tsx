@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TextInput, Pressable, Alert, Text } from 'react-native';
+import { View, StyleSheet, TextInput, Pressable, Alert, Text, Modal } from 'react-native';
 import { HeadingText } from '../../common/Texts';
 import { TextInputSingleLine } from '../../styled';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -18,26 +18,28 @@ import CustomModal from '../components/screens/CustomModal';
 import firestore, { firebase } from '@react-native-firebase/firestore';
 import Close from 'react-native-vector-icons/EvilIcons';
 import CustomReminderModal from './screens/CustomReminderModal';
-
+import LeftChevron from 'react-native-vector-icons/AntDesign';
+import { useNavigation } from '@react-navigation/native';
+import Animated, { Easing, FadeInUp, FadeInDown } from 'react-native-reanimated'
 const Editable = (props: any) => {
 
     const [editedText, setEditedText] = useState(props.selectedItem);
-    const { allTasks, taskCompleted,setDueDateTimeReminderText,captureDateTimeReminderTime, dueDateAdded, setAllTasks, setMyDayState, docId, captureDateTimeReminderDate, myDayState, myDay, setMyDay, dueDateTimeReminderDate, selectedDueDate, dueDateTimeReminderTime, setSelectedDueDate, setDueDate, dueDateTimeReminderText } = useTasks()
+    const { allTasks, taskCompleted, setDueDateTimeReminderText, captureDateTimeReminderTime, noteContent, setNoteContent, dueDateAdded, setAllTasks, setMyDayState, docId, captureDateTimeReminderDate, myDayState, myDay, setMyDay, dueDateTimeReminderDate, selectedDueDate, dueDateTimeReminderTime, setSelectedDueDate, setDueDate, dueDateTimeReminderText } = useTasks()
     const [modalVisible, setModalVisible] = useState(false);
-    const [dateTimeModalVisible,setDateTimeModalVisible] = useState(false)
+    const [dateTimeModalVisible, setDateTimeModalVisible] = useState(false)
     const userCollection = firestore().collection('users');
     const [editableDueDate, setEditableDueDate] = useState(dueDateAdded)
     const [editableDueDateText, setEditableDueDateText] = useState('')
-    const [editableDateTimeDateReminder,setEditableDateTimeDateReminder] = useState(captureDateTimeReminderDate)
-    const [editableDateTimeTimeReminder,setEditableDateTimeTimeReminder] = useState(captureDateTimeReminderTime)
- 
+    const [editableDateTimeDateReminder, setEditableDateTimeDateReminder] = useState(captureDateTimeReminderDate)
+    const [editableDateTimeTimeReminder, setEditableDateTimeTimeReminder] = useState(captureDateTimeReminderTime)
+    const navigation = useNavigation();
     const handleSave = async (docId) => {
-        
+        await saveNoteToFirestore();
         if (editableDueDate === '') {
             // Clear the dateSet in Firestore
             try {
                 const taskRef = userCollection.doc(docId);
-                await taskRef.update({ dateSet: '', name: editedText, myDay: myDayState,timeReminder: editableDateTimeTimeReminder,dateReminder:editableDateTimeDateReminder});
+                await taskRef.update({ dateSet: '', name: editedText, myDay: myDayState, timeReminder: editableDateTimeTimeReminder, dateReminder: editableDateTimeDateReminder });
                 console.log('Due date removed successfully from Firestore.');
                 // Update local state if using Context API
                 setAllTasks((prevTasks) =>
@@ -63,7 +65,7 @@ const Editable = (props: any) => {
             try {
                 const taskRef = userCollection.doc(docId);
                 await taskRef.set(
-                    { name: editedText, myDay: myDayState, dateSet: formattedDate,timeReminder: editableDateTimeTimeReminder,dateReminder:editableDateTimeDateReminder},
+                    { name: editedText, myDay: myDayState, dateSet: formattedDate, timeReminder: editableDateTimeTimeReminder, dateReminder: editableDateTimeDateReminder },
                     { merge: true }
                 );
                 console.log('Task updated successfully.');
@@ -71,7 +73,7 @@ const Editable = (props: any) => {
                 setAllTasks((prevTasks) =>
                     prevTasks.map((task) =>
                         task.firestoreDocId === docId
-                            ? { ...task, name: editedText, myDay: myDayState, dateSet: formattedDate,timeReminder: editableDateTimeTimeReminder,dateReminder:editableDateTimeDateReminder }
+                            ? { ...task, name: editedText, myDay: myDayState, dateSet: formattedDate, timeReminder: editableDateTimeTimeReminder, dateReminder: editableDateTimeDateReminder }
                             : task
                     )
                 );
@@ -92,12 +94,12 @@ const Editable = (props: any) => {
         setEditableDueDate(dueDate);
     }
 
-    const handleReminderDuedateTime = (dueDateTimeText,dueDateTimeHour,dueDateTimeformatted) => {
+    const handleReminderDuedateTime = (dueDateTimeText, dueDateTimeHour, dueDateTimeformatted) => {
         setDueDateTimeReminderText(dueDateTimeText)
         setEditableDateTimeTimeReminder(dueDateTimeHour)
         setEditableDateTimeDateReminder(dueDateTimeformatted)
         setDateTimeModalVisible(false)
-      }
+    }
     const renderDateConditional = () => {
         if (!editableDueDate) {
             return <HeadingText
@@ -113,7 +115,7 @@ const Editable = (props: any) => {
             const iconColor = isBefore(parsedDate, currentDate) || isYesterday(parsedDate)
                 ? "#C02136"
                 : isSameDay(parsedDate, currentDate)
-                    ? "#5A69AF" // Your original color for today
+                    ? "#71A6D2" // Your original color for today
                     : "grey";
             return (
                 <>
@@ -151,21 +153,21 @@ const Editable = (props: any) => {
                 fontSize={16}
                 color='grey' />
         } else {
-        const parsedDate = parse(editableDateTimeDateReminder, "dd/MM/yyyy", new Date());
-        const currentYear = new Date().getFullYear();
-        const isCurrentYear = parsedDate.getFullYear() === currentYear;
-        const formattedTime = editableDateTimeTimeReminder || '';
-        const dateText = isBefore(parse(editableDateTimeDateReminder, 'dd/MM/yyyy', new Date()), startOfToday())
-            ? isYesterday(parse(editableDateTimeDateReminder, 'dd/MM/yyyy', new Date())) ? 'Yesterday'
-            : format(parse(editableDateTimeDateReminder, 'dd/MM/yyyy', new Date()), 'EEE, MMM d')
-            : isSameDay(parse(editableDateTimeDateReminder, 'dd/MM/yyyy', new Date()), startOfToday()) ? 'Today'
-            : isTomorrow(parse(editableDateTimeDateReminder, 'dd/MM/yyyy', new Date())) ? 'Tomorrow'
-            : !isCurrentYear ? format(parsedDate, "EEE, MMM d, yyyy")
-            : format(parsedDate, "EEE, MMM d");
+            const parsedDate = parse(editableDateTimeDateReminder, "dd/MM/yyyy", new Date());
+            const currentYear = new Date().getFullYear();
+            const isCurrentYear = parsedDate.getFullYear() === currentYear;
+            const formattedTime = editableDateTimeTimeReminder || '';
+            const dateText = isBefore(parse(editableDateTimeDateReminder, 'dd/MM/yyyy', new Date()), startOfToday())
+                ? isYesterday(parse(editableDateTimeDateReminder, 'dd/MM/yyyy', new Date())) ? 'Yesterday'
+                    : format(parse(editableDateTimeDateReminder, 'dd/MM/yyyy', new Date()), 'EEE, MMM d')
+                : isSameDay(parse(editableDateTimeDateReminder, 'dd/MM/yyyy', new Date()), startOfToday()) ? 'Today'
+                    : isTomorrow(parse(editableDateTimeDateReminder, 'dd/MM/yyyy', new Date())) ? 'Tomorrow'
+                        : !isCurrentYear ? format(parsedDate, "EEE, MMM d, yyyy")
+                            : format(parsedDate, "EEE, MMM d");
             return (
                 <>
-                    <View style={{ flexDirection: 'column',justifyContent:'center',alignItems:'flex-start',flex:1 }}>
-                        <Text style={{ color: '#5A69AF',fontSize:16,marginLeft:25 }}>{`Remind me at ${formattedTime}`}</Text>
+                    <View style={{ flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', flex: 1 }}>
+                        <Text style={{ color: '#71A6D2', fontSize: 16, marginLeft: 25 }}>{`Remind me at ${formattedTime}`}</Text>
                         <Text style={styles.dueTomorrowTag}>{dateText}</Text>
                     </View>
                 </>
@@ -182,12 +184,28 @@ const Editable = (props: any) => {
         setEditableDateTimeDateReminder('')
         setEditableDateTimeTimeReminder('')
     }
-    
+    const saveNoteToFirestore = async () => {
+        if (docId && noteContent.trim() !== '') {
+            try {
+                const taskRef = userCollection.doc(docId);
+                await taskRef.update({ note: noteContent });
+                console.log('Note updated successfully.');
+            } catch (error) {
+                console.error('Error updating note:', error);
+            }
+        }
+    };
     return (
         <>
+            {/* <Animated.View entering={FadeInUp.duration(500).easing(Easing.ease)} exiting={FadeInDown}>
+        <Modal visible={props.editableModal}> */}
             <View style={styles.container}>
                 <View style={styles.taskContainer}>
                     <View style={styles.editablecontainer}>
+                        {/* <Pressable onPress={() => navigation.goBack()}>
+                        <LeftChevron name="left" size={22} color="grey" style={{ color: 'black' }}/>
+                        </Pressable>
+                    */}
                         <Icon name="circle-thin" size={27} color="grey" />
                         <TextInputSingleLine
                             onChangeText={(text) => setEditedText(text)}
@@ -200,7 +218,7 @@ const Editable = (props: any) => {
                             textDecorationLine={taskCompleted ? "line-through" : ''}
                         />
                     </View>
-                    <Pressable style={{ backgroundColor: props.color, paddingHorizontal: 7, paddingVertical: 5, borderRadius: 5 }} onPress={() => handleSave(docId)}>
+                    <Pressable style={{ backgroundColor: props.color, paddingHorizontal: 7, paddingVertical: 5, borderRadius: 5 }} onPress={() => { handleSave(docId); }}>
                         <HeadingText
                             textString={'save'}
                             fontSize={12}
@@ -213,12 +231,12 @@ const Editable = (props: any) => {
                 <View style={styles.secondContainer}>
                     <View style={styles.addtomyday}>
                         <Pressable style={{ flexDirection: 'row', justifyContent: 'flex-start', width: 120, flex: 1 }} onPress={() => setMyDayState((prev) => !prev)}>
-                            <Iconfont name="day-sunny" size={20} color="grey" />
+                            <Iconfont name="day-sunny" size={20} color={'grey' } />
                             <HeadingText
                                 textString={myDayState ? 'Added to My Day' : 'Add to My Day'}
                                 fontSize={16}
                                 textDecorationLine="none"
-                                color='grey'
+                                color={myDayState ? '#71A6D2' : 'grey'}
                                 marginLeft={25}
                             />
                         </Pressable >
@@ -233,33 +251,35 @@ const Editable = (props: any) => {
                         {editableDueDate && <Cross name="cross" size={22} color="grey" onPress={handleCrossMarkPress} />}
                     </View>
                     <View style={styles.addtoduedate} >
-                        <Pressable style={{ flexDirection: 'row', justifyContent: 'flex-start', width: 120, flex: 1,alignItems:'center' }} onPress = {() => setDateTimeModalVisible(true)}>
+                        <Pressable style={{ flexDirection: 'row', justifyContent: 'flex-start', width: 120, flex: 1, alignItems: 'center' }} onPress={() => setDateTimeModalVisible(true)}>
                             <Remind name="retweet" size={20} color="grey" />
 
                             {renderRemindMeText()}
-                            {editableDateTimeDateReminder&& <Cross name="cross" size={22} color="grey" onPress={handleReminder} />}
+                            {editableDateTimeDateReminder && <Cross name="cross" size={22} color="grey" onPress={handleReminder} />}
                         </Pressable>
                     </View>
                 </View>
                 <View style={styles.addNote}>
                     <TextInputSingleLine
-                        onChangeText={() => { }}
-                        value={''}
+                        onChangeText={setNoteContent}
+                        value={noteContent}
                         placeholder={'Add Note'}
                         color={'grey'}
                     />
                 </View>
-
             </View>
             <View>
-                <CustomModal allTasks={allTasks} selectedDueDate={selectedDueDate} onDueDateSelected={handleDueDateSelected} modalVisible={modalVisible} setModalVisible={setModalVisible} />
-                <CustomReminderModal
-      dateTimeModalVisible={dateTimeModalVisible}
-      setDateTimeModalVisible={setDateTimeModalVisible}
-      handleReminderDuedateTime={handleReminderDuedateTime}
-    />
-            </View>
+            
 
+                <CustomModal  allTasks={allTasks} selectedDueDate={selectedDueDate} onDueDateSelected={handleDueDateSelected} modalVisible={modalVisible} setModalVisible={setModalVisible} />
+                <CustomReminderModal
+                    dateTimeModalVisible={dateTimeModalVisible}
+                    setDateTimeModalVisible={setDateTimeModalVisible}
+                    handleReminderDuedateTime={handleReminderDuedateTime}
+                />
+            </View>
+            {/* </Modal>
+            </Animated.View> */}
         </>
     );
 };
@@ -271,7 +291,7 @@ const styles = StyleSheet.create({
     },
     dueTodayTag: {
         // Adjust appearance as desired, e.g.,
-        color: '#5A69AF',
+        color: '#71A6D2',
         fontSize: 16,
         fontWeight: '400',
         marginLeft: 25
@@ -309,7 +329,7 @@ const styles = StyleSheet.create({
         color: 'grey',
         fontSize: 14,
         fontWeight: '400',
-        marginLeft:25
+        marginLeft: 25
     },
     image: {
         width: 20,
@@ -350,13 +370,13 @@ const styles = StyleSheet.create({
     },
     addNote: {
         elevation: 2,
-        marginVertical: 6,
         backgroundColor: 'white',
         height: 200,
         width: '100%',
         borderBottomWidth: 0.2,
         borderBottomColor: 'grey',
         borderRadius: 2,
+        flex: 1
     }
 })
 export default Editable;

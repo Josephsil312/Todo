@@ -67,6 +67,8 @@ type TasksContextType = {
     setCaptureDateTimeReminderTime:any;
     taskCompleted:any;
     setTaskCompleted:any
+    noteContent:any
+    setNoteContent:any;
 };
 
 const TasksContextProvider = ({ children }: PropsWithChildren<{}>) => {
@@ -92,6 +94,7 @@ const TasksContextProvider = ({ children }: PropsWithChildren<{}>) => {
         name: string;
     } | null>(null);
     const [star, setStar] = useState<Task[]>([]);
+    const [noteContent, setNoteContent] = useState('');
     const [starredTasks, setStarredTasks] = useState<Task[]>([]);
     const [selectedDueDate, setSelectedDueDate] = useState('');
     const [dueDate, setDueDate] = useState('');
@@ -102,7 +105,7 @@ const TasksContextProvider = ({ children }: PropsWithChildren<{}>) => {
     const [dueDateTimeReminderText,setDueDateTimeReminderText] = useState('')
     const [dueDateTimeDisplay,setDueDateTimeDisplay] = useState('')
     return (
-        <TasksContext.Provider value={{taskCompleted,setTaskCompleted,captureDateTimeReminderTime,setCaptureDateTimeReminderTime,captureDateTimeReminderDate,setCaptureDateTimeReminderDate,dueDateTimeReminderDate,setDueDateTimeReminderDate,dueDateTimeDisplay,setDueDateTimeDisplay,dueDateTimeReminderDateFormatted,setDueDateTimeReminderDateFormatted,dueDateTimeReminderTime,setDueDateTimeReminderTime,dueDateTimeReminderText,setDueDateTimeReminderText,myDay,setMyDay,docId,setDocId,password, setPassword,email, setEmail,user, setUser,initializing, setInitializing,editedText, setEditedText,dueDateAdded,setDueDateAdded,myDayState,setMyDayState,showCompletedDropdown,setShowCompletedDropdown,dueDate, setDueDate, selectedDueDate, setSelectedDueDate, currentTaskName, setCurrentTaskName, allTasks, setAllTasks, setStarredTasks, starredTasks, star, setStar, tasks, setTasks, completedTasks, setCompletedTasks, starId, setStarId, selectedItem, setSelectedItem }}>
+        <TasksContext.Provider value={{noteContent,setNoteContent,taskCompleted,setTaskCompleted,captureDateTimeReminderTime,setCaptureDateTimeReminderTime,captureDateTimeReminderDate,setCaptureDateTimeReminderDate,dueDateTimeReminderDate,setDueDateTimeReminderDate,dueDateTimeDisplay,setDueDateTimeDisplay,dueDateTimeReminderDateFormatted,setDueDateTimeReminderDateFormatted,dueDateTimeReminderTime,setDueDateTimeReminderTime,dueDateTimeReminderText,setDueDateTimeReminderText,myDay,setMyDay,docId,setDocId,password, setPassword,email, setEmail,user, setUser,initializing, setInitializing,editedText, setEditedText,dueDateAdded,setDueDateAdded,myDayState,setMyDayState,showCompletedDropdown,setShowCompletedDropdown,dueDate, setDueDate, selectedDueDate, setSelectedDueDate, currentTaskName, setCurrentTaskName, allTasks, setAllTasks, setStarredTasks, starredTasks, star, setStar, tasks, setTasks, completedTasks, setCompletedTasks, starId, setStarId, selectedItem, setSelectedItem }}>
             {children}
         </TasksContext.Provider>
     )

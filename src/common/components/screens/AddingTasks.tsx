@@ -1,14 +1,15 @@
-import { Text, View, Keyboard, TouchableOpacity, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { Text, View, Keyboard, TouchableOpacity, Pressable, StyleSheet, ScrollView } from 'react-native';
 import React, { useState, useEffect, useRef } from 'react';
 import { TextInputSingleLine } from '../../../styled';
 import { HeadingText } from '../../Texts';
 import CustomModal from './CustomModal';
 import Iconn from 'react-native-vector-icons/Ionicons';
-import Close from 'react-native-vector-icons/EvilIcons';
+import Close from 'react-native-vector-icons/AntDesign';
 import { useTasks } from '../../TasksContextProvider';
 import Remind from 'react-native-vector-icons/AntDesign';
 import CustomReminderModal from './CustomReminderModal';
-import notifee, { TimestampTrigger, TriggerType } from '@notifee/react-native';
+import Calendarr from 'react-native-vector-icons/AntDesign';
+
 const AddingTasks = (props: {
   setTask: (arg0: any) => any;
   task: any;
@@ -17,14 +18,14 @@ const AddingTasks = (props: {
 
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [dateTimeModalVisible,setDateTimeModalVisible] = useState(false)
+  const [dateTimeModalVisible, setDateTimeModalVisible] = useState(false)
   const textInputRef = useRef(null);
-  const { allTasks, selectedItem,setDueDateTimeReminderText,dueDateTimeDisplay,selectedDueDate, dueDateTimeReminderDate,setSelectedDueDate, setDueDate,dueDateTimeReminderText,dueDateTimeReminderTime,setDueDateTimeReminderTime,setDueDateTimeReminderDate } = useTasks();
+  const { allTasks, selectedItem, setDueDateTimeReminderText, dueDateTimeDisplay, selectedDueDate, dueDateTimeReminderDate, setSelectedDueDate, setDueDate, dueDateTimeReminderText, dueDateTimeReminderTime, setDueDateTimeReminderTime, setDueDateTimeReminderDate } = useTasks();
 
 
   const openModal = () => {
     setModalVisible(true);
-    
+
   };
 
   const openDateTimeModal = () => {
@@ -39,15 +40,14 @@ const AddingTasks = (props: {
     setDueDate(dueDate);
   }
 
-  
-  const handleReminderDuedateTime = (dueDateTimeText,dueDateTimeHour,dueDateTimeformatted) => {
+
+  const handleReminderDuedateTime = (dueDateTimeText, dueDateTimeHour, dueDateTimeformatted) => {
     setDueDateTimeReminderText(dueDateTimeText)
     setDueDateTimeReminderTime(dueDateTimeHour)
     setDueDateTimeReminderDate(dueDateTimeformatted)
     setDateTimeModalVisible(false)
   }
-  
-  
+
   const onFocusHandler = () => {
     setTimeout(() => textInputRef.current && textInputRef.current.focus(), 250)
   }
@@ -56,8 +56,6 @@ const AddingTasks = (props: {
     onFocusHandler();
   }, []);
 
-  
-  console.log('dueDateTimeReminderText', dueDateTimeReminderText)
   return (
     <>
       <View style={{ marginHorizontal: 5 }}>
@@ -78,82 +76,100 @@ const AddingTasks = (props: {
             }
           </Pressable>
         </View>
-        <TouchableOpacity onPress={openModal}>
-          <View style={styles.addtask}>
-            <View style={{ flexDirection: 'row', backgroundColor: '#7568f8', borderRadius: 5, padding: 2 }}>
+
+        {/* <View style={styles.addtask}> */}
+        <ScrollView
+          horizontal
+          contentContainerStyle={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: "center",
+            height: 40,
+            width: '100%'
+          }}
+        >
+          <TouchableOpacity onPress={openModal}>
+            <View style={{ flexDirection: 'row', paddingLeft: 5, justifyContent: 'space-between', borderRadius: 15, backgroundColor: '#71A6D2', alignItems: 'center' }}>
+              <Calendarr name="calendar" size={19} color={'white'} style={{ marginRight: 3 }} />
+
               <HeadingText
                 textString={
                   (selectedDueDate || 'Set Due Date')
                 }
-                fontSize={16}
+                fontSize={14}
                 fontFamily="SuisseIntl"
-                marginVertical={10}
-                style={selectedDueDate ? styles.dueDates : {}}
-                color='white'
-              />
-              {selectedDueDate && <Close name="close-o" size={20} color="white" onPress={() => { setDueDate(''); setSelectedDueDate('') }} />}
+                style={styles.dueDates}
+                color='white' />
+              {selectedDueDate && <Close name="closecircle" style={{paddingRight: 5 }} size={15} color={'white'} onPress={() => { setDueDate(''); setSelectedDueDate('') }} />}
+              {/* </HeadingText> */}
+
             </View>
-            <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }} onPress={openDateTimeModal}>
-              <Remind name="retweet" size={20} color="grey" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={openDateTimeModal}>
+            <View style={{ flexDirection: 'row', paddingLeft: 5, justifyContent: 'flex-start', borderRadius: 15, backgroundColor: '#71A6D2', alignItems: 'center' }}>
+              <Remind name="bells" size={20} color="white" />
               <HeadingText
-                textString={((dueDateTimeReminderText ) || 'Remind me')}
-                fontSize={16}
+                textString={((dueDateTimeReminderText) || 'Remind me')}
+                fontSize={14}
                 textDecorationLine="none"
-                color='grey'
+                color='white'
+                style={styles.reminder}
               />
-              {dueDateTimeDisplay && <Close name="close-o" size={20} color="black" onPress={() => {setDueDateTimeReminderText('');setDueDateTimeReminderTime('');setDueDateTimeReminderDate('')}} />}
-            </TouchableOpacity>
-            
-          </View>
-        </TouchableOpacity>
+              {dueDateTimeReminderText && <Close name="closecircle" size={15} style={{ paddingRight: 5 }} color="white" onPress={() => { setDueDateTimeReminderText(''); setDueDateTimeReminderTime(''); setDueDateTimeReminderDate('') }} />}
+
+            </View>
+          </TouchableOpacity>
+
+        </ScrollView>
+
       </View>
       <CustomModal allTasks={allTasks} selectedDueDate={selectedDueDate} onDueDateSelected={handleDueDateSelected} modalVisible={modalVisible} setModalVisible={setModalVisible} />
       <CustomReminderModal
-      dateTimeModalVisible={dateTimeModalVisible}
-      setDateTimeModalVisible={setDateTimeModalVisible}
-      handleReminderDuedateTime={handleReminderDuedateTime}
-    />
+        dateTimeModalVisible={dateTimeModalVisible}
+        setDateTimeModalVisible={setDateTimeModalVisible}
+        handleReminderDuedateTime={handleReminderDuedateTime}
+      />
     </>
   );
 };
 
 const styles = StyleSheet.create({
-  image: {
-    height: 40,
-    width: 40,
-  },
   addtask: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: "center",
-    paddingHorizontal: 12
+    height: 50,
   },
 
   addingtaskicon: {
     position: 'relative',
     zIndex: 9999999
   },
-  addtaskContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingBottom: 60,
-    flex: 1,
-  },
   dueDates: {
-    backgroundColor: '#7568f8',
     borderRadius: 10,
-    padding: 10,                      /* Overall padding for content */
-    paddingHorizontal: 15,             /* Wider horizontal padding */
+    paddingLeft: 7,
     color: 'white',
-    textAlign: 'center',
-    fontSize: 16,                      /* Ensure comfortable text size */
-    lineHeight: 20,                    /* Adjust line height for readability */
-    letterSpacing: 0.4,                /* Optional: Slight letter spacing */
-    width: 'auto',                      /* Adjust width if needed */
-    marginVertical: 5,                  /* Space above and below */
-    textShadowRadius: 1,
-    textShadowColor: '#5e54a0',         /* Optional: Darker shadow for contrast */
+    letterSpacing: 0.4,
+    marginVertical: 5,
+    textShadowRadius: 2,
+    textShadowColor: '#5e54a0',
+    paddingBottom: 5,
+    paddingTop: 3,
+    paddingRight: 7,
+  },
+  reminder: {
+    borderRadius: 10,
+    paddingLeft: 7,
+    color: 'white',
+    letterSpacing: 0.4,
+    marginVertical: 5,
+    textShadowRadius: 2,
+    textShadowColor: '#5e54a0',
+    paddingBottom: 4,
+    paddingTop: 3,
+    paddingRight: 7,
+    maxWidth: 150,
+    height:'auto'
   }
 
 });

@@ -75,7 +75,7 @@ const LoginScreen = ({navigation}: Props) => {
   
         <Pressable
           style={styles.signupLink}
-          onPress={() => navigation.navigate('SignUpScreen')}
+          onPress={() => navigation.goBack()}
 >
           <Text style={styles.signupText}>Don't have an account? Sign Up</Text>
         </Pressable>
