@@ -1,4 +1,4 @@
-package com.todo;
+package com.todo.app;
 import org.devio.rn.splashscreen.SplashScreenReactPackage;
 import android.app.Application;
 import com.facebook.react.PackageList;

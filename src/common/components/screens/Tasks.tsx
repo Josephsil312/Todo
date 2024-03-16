@@ -4,11 +4,11 @@ import {
   StyleSheet,
   Pressable,
   Text,
-  LayoutAnimation,
   SectionList,
-  SafeAreaView,
   KeyboardAvoidingView,
-  Alert
+  ActivityIndicator,
+  Platform,
+  Alert,
 } from 'react-native';
 import Animated, { Easing, LightSpeedInLeft, LightSpeedOutRight } from 'react-native-reanimated'
 import firestore, { firebase } from '@react-native-firebase/firestore';
@@ -30,11 +30,13 @@ import { useTasks } from '../../TasksContextProvider';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { isAfter, isYesterday, subDays, isSameDay, isTomorrow, parse, isBefore, format, startOfToday } from 'date-fns';
 import { getFirestore, collection, addDoc } from '@react-native-firebase/firestore';
-import LottieView from 'lottie-react-native';
+import auth, { FirebaseAuthError } from '@react-native-firebase/auth';
 import Bell from 'react-native-vector-icons/EvilIcons';
 import notifee, { EventType, TimestampTrigger, TriggerType } from '@notifee/react-native';
 import Iconfont from 'react-native-vector-icons/Fontisto';
 import SwipeableRow from './SwipableRow';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
@@ -47,7 +49,7 @@ const Tasks = ({ navigation }: Props) => {
   const [task, setTask] = useState('');
   const [isRBSheetOpen, setIsRBSheetOpen] = useState(false);
   const [editableModal, setEditableModal] = useState(false)
-  const [notificationId, setNotificationId] = useState('');
+  const [expoPushToken, setExpoPushToken] = useState<string>();
   const {
     setDueDateAdded,
     showCompletedDropdown,
@@ -64,50 +66,16 @@ const Tasks = ({ navigation }: Props) => {
     dueDateTimeReminderDate,
     setCaptureDateTimeReminderDate,
     setCaptureDateTimeReminderTime,
-    setTaskCompleted
+    setTaskCompleted,
+    noteContent,
+    setNoteContent
   } = useTasks();
 
-  // const rightSwipe = ({ item, onDelete }) => {
-
-  //   const renderRightActions = (dragX) => {
-  //     const trans = dragX.interpolate({
-  //       inputRange: [-100, 0],
-  //       outputRange: [0, 1],
-  //       extrapolate: 'clamp'
-  //     });
-  //     return (
-  //       <RectButton style={styles.rightAction} onPress={() => onDelete(item.firestoreDocId)}>
-  //         <Animated.Text
-  //           style={[
-  //             styles.actionText,
-  //             {
-  //               transform: [{ translateX: 100 }],
-  //             },
-  //           ]}
-  //         >
-  //           Delete
-  //         </Animated.Text>
-  //       </RectButton>
-  //     );
-  //   };
-
-  //   return (
-  //     <Swipeable renderRightActions={renderRightActions}>
-  //       <View style={{ flex: 1 }}>
-  //         <Animated.View style={{
-  //           width: 500,
-  //           flex: 1,
-  //         }}>
-  //           {/* <Text>{item.name}</Text> */}
-  //         </Animated.View>
-  //       </View>
-
-  //     </Swipeable>
-  //   );
-  // };
-
-  const userCollection = firestore().collection('users');
-
+  const [isLoading, setIsLoading] = useState(true);
+  const userId = auth().currentUser.uid;
+  const userCollection = firestore().collection('users').doc(userId).collection('tasks');
+  // console.log('userCollectionn',userCollectionn)
+  // const userCollection = firestore().collection('users')
 
   const handleAddTask = async () => {
     if (task.trim() !== '') {
@@ -133,82 +101,114 @@ const Tasks = ({ navigation }: Props) => {
       }
 
     }
-    // onCreateTriggerNotification(dueDateTimeReminderDate, dueDateTimeReminderTime)
-    if (dueDateTimeReminderDate.trim() !== '' && dueDateTimeReminderTime.trim() !== '') {
-      onDisplayNotification(dueDateTimeReminderDate, dueDateTimeReminderTime, task);
-    }
+
+    // if (dueDateTimeReminderDate.trim() !== '' && dueDateTimeReminderTime.trim() !== '') {
+    //   onDisplayNotification(dueDateTimeReminderDate, dueDateTimeReminderTime, task);
+    // }
 
   };
 
-  async function onDisplayNotification(dueDateTimeReminderDatee, dueDateTimeReminderTimee, taskName) {
-    // Request permissions (required for iOS)
-    try {
-      await notifee.requestPermission()
-      const dateParts = dueDateTimeReminderDatee.split('/');
-      const timeParts = dueDateTimeReminderTimee.split(':');
-      const year = parseInt(dateParts[2], 10);
-      const month = parseInt(dateParts[1], 10) - 1; // Adjust for 0-index
-      const day = parseInt(dateParts[0], 10);
-      const hours = parseInt(timeParts[0], 10);
-      const minutes = parseInt(timeParts[1], 10);
+  // async function onDisplayNotification(dueDateTimeReminderDatee, dueDateTimeReminderTimee, taskName) {
+  //   // Request permissions (required for iOS)
+  //   try {
+  //     await notifee.requestPermission()
+  //     const dateParts = dueDateTimeReminderDatee.split('/');
+  //     const timeParts = dueDateTimeReminderTimee.split(':');
+  //     const year = parseInt(dateParts[2], 10);
+  //     const month = parseInt(dateParts[1], 10) - 1; // Adjust for 0-index
+  //     const day = parseInt(dateParts[0], 10);
+  //     const hours = parseInt(timeParts[0], 10);
+  //     const minutes = parseInt(timeParts[1], 10);
 
-      const notificationDateTime = new Date(year, month, day, hours, minutes);
-     
-     
-      const trigger: TimestampTrigger = {
-        type: TriggerType.TIMESTAMP,
-        timestamp: notificationDateTime.getTime(), // Scheduled time
-      };
+  //     const notificationDateTime = new Date(year, month, day, hours, minutes);
 
-      const channelId = await notifee.createChannel({
-        id: 'default',
-        name: 'Default Channel',
-      });
 
-      // Display a notification
+  //     const trigger: TimestampTrigger = {
+  //       type: TriggerType.TIMESTAMP,
+  //       timestamp: notificationDateTime.getTime(), // Scheduled time
+  //     };
 
-       await notifee.createTriggerNotification(
-        {
-          title: 'Reminder',
-          body: `${taskName}`,
-          android: {
-            channelId,
-          },
-          
-        },
-        trigger, 
-      );
-      // setNotificationId(id);
-      console.log('notificationid',notificationId)
-    } catch (error) {
-      console.log('error in notification', error)
-    }
-
-  }
-
-  async function onBackgroundEvent(event) {
-    if (event.type === EventType.DISMISSED) {
-      console.log('User dismissed notification', event.notification);
-    } else if (event.type === EventType.PRESS) {
-      console.log('User pressed notification', event.notification);
-      // Additional handling for press event
-    }
-    // Handle other event types as needed
-  }
-  notifee.onBackgroundEvent(onBackgroundEvent);
-  
-  // useEffect(() => {
-  //   const unsubscribe = userCollection // Replace 'tasks' with your collection name
-  //     .onSnapshot(snapshot => {
-  //       const newTasks = snapshot.docs.map(doc => ({
-  //         firestoreDocId: doc.id,
-  //         ...doc.data(),
-  //       }));
-  //       setAllTasks(newTasks);
+  //     const channelId = await notifee.createChannel({
+  //       id: 'default',
+  //       name: 'Default Channel',
   //     });
 
-  //   return () => unsubscribe();
-  // }, []);
+  //     // Display a notification
+
+  //     await notifee.createTriggerNotification(
+  //       {
+  //         title: 'Reminder',
+  //         body: `${taskName}\nscheduled at ${dueDateTimeReminderTimee}`,
+  //         android: {
+  //           channelId,
+  //         },
+  //         id: channelId
+
+  //       },
+  //       trigger,
+  //     );
+
+  //   } catch (error) {
+  //     console.log('error in notification', error)
+  //   }
+
+  // }
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    }),
+  });
+
+  // useEffect(() => {
+  //   registerForPushNotificationsAsync().then((token) => setExpoPushToken(token))
+  // },[])
+
+  console.log('token from expo:',expoPushToken)
+  // async function registerForPushNotificationsAsync() {
+  //   let token;
+  
+  //   if (Platform.OS === 'android') {
+  //     await Notifications.setNotificationChannelAsync('default', {
+  //       name: 'default',
+  //       importance: Notifications.AndroidImportance.MAX,
+  //       vibrationPattern: [0, 250, 250, 250],
+  //       lightColor: '#FF231F7C',
+  //     });
+  //   }
+  
+  //   if (Device.isDevice) {
+  //     const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  //     let finalStatus = existingStatus;
+  //     if (existingStatus !== 'granted') {
+  //       const { status } = await Notifications.requestPermissionsAsync();
+  //       finalStatus = status;
+  //     }
+  //     if (finalStatus !== 'granted') {
+  //       Alert.alert('Failed to get push token for push notification!');
+  //       return;
+  //     }
+     
+  //     token = (await Notifications.getExpoPushTokenAsync({ projectId: 'your-project-id' })).data;
+  //     console.log(token);
+  //   } else {
+  //     Alert.alert('Must use physical device for Push Notifications');
+  //   }
+  
+  //   return token;
+  // }
+  // async function onBackgroundEvent(event) {
+  //   if (event.type === EventType.DISMISSED) {
+  //     console.log('User dismissed notification', event.notification);
+  //   } else if (event.type === EventType.PRESS) {
+  //     console.log('User pressed notification', event.notification);
+  //     // Additional handling for press event
+  //   }
+  //   // Handle other event types as needed
+  // }
+  // notifee.onBackgroundEvent(onBackgroundEvent);
+
   useEffect(() => {
     const unsubscribe = userCollection
       .orderBy('createdAt', 'desc') // Assuming 'createdAt' is your timestamp field
@@ -218,33 +218,29 @@ const Tasks = ({ navigation }: Props) => {
           ...doc.data(),
         }));
         setAllTasks(newTasks);
+        setIsLoading(false);
       });
-  
     return () => unsubscribe();
   }, []);
-  
+
   const deleteTask = async (id) => {
     try {
       await userCollection.doc(id).delete();
+      await notifee.cancelNotification(id)
       setTask('');
     } catch (error) {
       console.error('Error deleting task from Firestore:', error);
     }
   }
 
-
-
   const handleCompleteTask = async (firestoreDocId) => {
     try {
       const taskRef = userCollection.doc(firestoreDocId)
-      console.log('taskRef',taskRef)
+      console.log('taskRef', taskRef)
       await taskRef.set({ isCompleted: true }, { merge: true });
       setCompletedTaskId(firestoreDocId);
-      
+      await notifee.cancelNotification(firestoreDocId)
       console.log('Task completed successfully.');
-      
-        // await notifee.cancelTriggerNotification(notificationId);
-      
     } catch (error) {
       console.error('Error updating completed task:', error);
     }
@@ -300,12 +296,11 @@ const Tasks = ({ navigation }: Props) => {
       : isSameDay(parsedDate, currentDate)
         ? "grey" // Your original color for today
         : "grey";
-   
-    
-    return (<>
-      <View style={{ flexDirection: 'row', alignItems: 'center',marginRight:5 }}>
 
-        <Calendarr name="calendar" size={15} color={iconColor} style={{marginRight:3}} />
+    return (<>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 5 }}>
+
+        <Calendarr name="calendar" size={15} color={iconColor} style={{ marginRight: 3 }} />
 
         {isBefore(parse(item.dateSet, 'dd/MM/yyyy', new Date()), startOfToday()) ? (
           <Text style={styles.overdueTag}>
@@ -321,9 +316,9 @@ const Tasks = ({ navigation }: Props) => {
           <Text style={styles.dueTomorrowTag}>Tomorrow</Text>
         ) : (
           !isCurrentYear ?
-            <Text style={styles.dueTomorrowTag}>{format(parsedDate, "EEE, MMM d, yyyy")}</Text> // Year included for non-current years (past and future)
+            <Text style={styles.futuretag}>{format(parsedDate, "EEE, MMM d, yyyy")}</Text> // Year included for non-current years (past and future)
             :
-            <Text style={styles.dueTomorrowTag}>{format(parsedDate, "EEE, MMM d")}</Text>
+            <Text style={styles.futuretag}>{format(parsedDate, "EEE, MMM d")}</Text>
         )}
         {/* {hasReminder && <Text>Reminder</Text>} */}
       </View>
@@ -340,118 +335,129 @@ const Tasks = ({ navigation }: Props) => {
   ];
 
   console.log('alltasks', allTasks)
-   
+
   return (
-    <>{isRBSheetOpen &&
-      <View
-        style={{
-          ...StyleSheet.absoluteFillObject,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)', // Adjust the alpha value for the darkness level
-          zIndex: 1,
-        }}
-      />
-    }
+    <>
+      {isLoading && ( // Conditionally render the activity indicator
+
+        <ActivityIndicator size="large" color="#001d76" />
+
+      )}
+
+
+
+      {isRBSheetOpen &&
+        <View
+          style={{
+            ...StyleSheet.absoluteFillObject,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', // Adjust the alpha value for the darkness level
+            zIndex: 1,
+          }}
+        />
+      }
+
+
       <KeyboardAvoidingView style={styles.taskContainer} keyboardShouldPersistTaps='always'>
-        <GestureHandlerRootView>
-          <SectionList
-            sections={sections}
-            keyExtractor={item => item.firestoreDocId}
-            renderItem={({ item }) => (
-              <>
-                <SwipeableRow onDelete={() => deleteTask(item.firestoreDocId)}            
-                >
-                  <Animated.View entering={LightSpeedInLeft.duration(200).easing(Easing.ease)} exiting={LightSpeedOutRight.duration(200).easing(Easing.ease)}>
-                    <Pressable
-                      style={styles.incompletetasks}
-                      onPress={() => { openRBSheet(item.name); setEditableModal(true); setTaskCompleted(item.isCompleted); setDocId(item.firestoreDocId); setMyDayState(item.myDay); setDueDateAdded(item.dateSet); setCaptureDateTimeReminderDate(item.dateReminder); setCaptureDateTimeReminderTime(item.timeReminder) }}
-                    >
+        {!isLoading && (
+          <GestureHandlerRootView>
+            <SectionList
+              sections={sections}
+              keyExtractor={item => item.firestoreDocId}
+              renderItem={({ item }) => (
+                <>
 
-                      <View style={styles.icontextcontainer}>
-                        {item.isCompleted ? (
-                          <TouchableOpacity onPress={() => {
-                            toggleTask(item.firestoreDocId);
-                          }}>
-                            <Check name="checkcircle" size={23} color={'#71A6D2'} />
-                          </TouchableOpacity>
-                        ) : (
-                          <TouchableOpacity onPress={() => handleCompleteTask(item.firestoreDocId)}>
-                            {/* <Icon name="circle-thin" size={27} color="grey" style={{backgroundColor:'black'}}/>  */}
-                            <Icon name="circle-thin" size={27} color="grey" />
-                          </TouchableOpacity>
-                        )}
-                        <View style={{ flexDirection: 'column', marginLeft: '2%', alignItems: 'flex-start',paddingLeft:10 }}>
-                          <HeadingText
-                            textString={item.name}
-                            fontSize={17}
-                            fontFamily="SuisseIntl"
-                            textDecorationLine={item.isCompleted ? "line-through" : ''}
-                            
-                          />
-                          <View style={{ flexDirection: 'row',alignItems:'center' }}>
-                            {item.dateSet && (
-                              <>
-                                {renderDateConditional(item)}
-                              </>
+                  <SwipeableRow onDelete={() => deleteTask(item.firestoreDocId)}
+                  >
+                    <Animated.View entering={LightSpeedInLeft.duration(200).easing(Easing.ease)} exiting={LightSpeedOutRight.duration(200).easing(Easing.ease)}>
+                      <Pressable
+                        style={styles.incompletetasks}
+                        onPress={() => { setNoteContent(item.Note); openRBSheet(item.name); setEditableModal(true); setTaskCompleted(item.isCompleted); setDocId(item.firestoreDocId); setMyDayState(item.myDay); setDueDateAdded(item.dateSet); setCaptureDateTimeReminderDate(item.dateReminder); setCaptureDateTimeReminderTime(item.timeReminder) }}
+                      >
 
-                            )}
-                            {item.myDay &&  <Iconfont name="day-sunny" size={15} color = {'grey'} style={{marginRight:5}}/>}
-                            {item.myDay && <HeadingText
-                              textString={'My Day'}
-                              fontSize={13}
+                        <View style={styles.icontextcontainer}>
+                          {item.isCompleted ? (
+                            <TouchableOpacity onPress={() => {
+                              toggleTask(item.firestoreDocId);
+                            }}>
+                              <Check name="checkcircle" size={24} color={'#001d76'} />
+                            </TouchableOpacity>
+                          ) : (
+                            <TouchableOpacity onPress={() => handleCompleteTask(item.firestoreDocId)}>
+                              {/* <Icon name="circle-thin" size={27} color="grey" style={{backgroundColor:'black'}}/>  */}
+                              <Icon name="circle-thin" size={27} color="grey" />
+                            </TouchableOpacity>
+                          )}
+                          <View style={{ height: 40, width: 2, backgroundColor: '#001d76', marginHorizontal: '4%' }}></View>
+                          <View style={{ flexDirection: 'column', marginLeft: '2%', alignItems: 'flex-start', paddingLeft: 10 }}>
+
+                            <HeadingText
+                              textString={item.name}
+                              fontSize={17}
                               fontFamily="SuisseIntl"
-                              color='grey'
-                              fontWeight={400}
-                              marginRight={6}
+                              textDecorationLine={item.isCompleted ? "line-through" : ''}
+                              color='#001d76'
+
                             />
-                            }
-                            {(item.timeReminder || item.dateReminder) && <Bell name="bell" size={15} color = {'grey'} style={{marginRight:5}} />}
-                            {/* {(item.timeReminder || item.dateReminder) && 
-                             <HeadingText
-                              textString={'Reminder'}
-                              fontSize={13}
-                              fontFamily="SuisseIntl"
-                              color='grey'
-                              fontWeight={400}
-                              marginRight={6}
-                            />} */}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', width: 100 }}>
+                              {item.dateSet && (
+                                <>
+                                  {renderDateConditional(item)}
+                                </>
+
+                              )}
+                              {item.myDay && <Iconfont name="day-sunny" size={15} color={'grey'} style={{ marginRight: 5 }} />}
+                              {item.myDay && <HeadingText
+                                textString={'My Day'}
+                                fontSize={13}
+                                fontFamily="SuisseIntl"
+                                color='grey'
+                                fontWeight={400}
+                                marginRight={15}
+                              />
+                              }
+                              {(item.timeReminder || item.dateReminder) && <Bell name="bell" size={15} color={'grey'} style={{ marginRight: 5 }} />}
+                            </View>
+
                           </View>
 
                         </View>
+                        <Pressable key={item.firestoreDocId} onPress={() => starChange(item.firestoreDocId)} style={{ paddingLeft: 20 }}>
+                          {item.isImportant ? <Iconfromentypo name="star" size={24} color="grey" style={{ color: '#001d76' }} />
+                            : <Iconn name="star" size={27} color="#001d76" />
+                          }
+                        </Pressable>
 
-                      </View>
-                      <Pressable key={item.firestoreDocId} onPress={() => starChange(item.firestoreDocId)} style = {{paddingLeft:20}}>
-                        {item.isImportant ? <Iconfromentypo name="star" size={24} color="grey" style={{ color: '#71A6D2' }} />
-                          : <Iconn name="star" size={27} color="grey" />
-                        }
                       </Pressable>
+                    </Animated.View>
+                  </SwipeableRow>
 
+                </>
+              )}
+              renderSectionHeader={({ section: { title } }) => {
+                if (title) {
+                  return (
+                    <Pressable onPress={toggleCompletedDropdown} style={styles.completedlistlength}>
+                      {/* <Animated.View style={[animatedStyle]}> */}
+                      <Iconchev name="chevron-small-right" size={20} color="#001d76" />
+                      {/* </Animated.View> */}
+                      <HeadingText
+                        textString={`Completed ${allTasks.filter((task) => task.isCompleted).length}`}
+                        fontSize={16}
+                        fontFamily="SuisseIntl"
+                        color='#001d76'
+                      />
                     </Pressable>
-                  </Animated.View>
-                </SwipeableRow>
-              </>
-            )}
-            renderSectionHeader={({ section: { title } }) => {
-              if (title) {
-                return (
-                  <Pressable onPress={toggleCompletedDropdown} style={styles.completedlistlength}>
-                    {/* <Animated.View style={[animatedStyle]}> */}
-                    <Iconchev name="chevron-small-right" size={20} color="white" />
-                    {/* </Animated.View> */}
-                    <HeadingText
-                      textString={`Completed ${allTasks.filter((task) => task.isCompleted).length}`}
-                      fontSize={16}
-                      fontFamily="SuisseIntl"
-                      color='white'
-                    />
-                  </Pressable>
 
-                );
-              } else {
-                return null;
-              }
-            }}
-          />
-        </GestureHandlerRootView>
+                  );
+                } else {
+                  return null;
+                }
+              }}
+            />
+          </GestureHandlerRootView>
+
+        )}
+
       </KeyboardAvoidingView>
 
       <RBSheet
@@ -471,14 +477,14 @@ const Tasks = ({ navigation }: Props) => {
 
           },
           container: {
-            height: '20%',
+            height: '26%',
           }
         }}>
         <AddingTasks
           handleAddTask={handleAddTask}
           task={task}
           setTask={setTask}
-          color={'#71A6D2'}
+          color={'#001d76'}
         />
       </RBSheet>
 
@@ -494,19 +500,23 @@ const Tasks = ({ navigation }: Props) => {
         customStyles={{
           wrapper: {
             backgroundColor: 'transparent',
+
           },
           draggableIcon: {
-            backgroundColor: '#000',
+            backgroundColor: 'red',
+
           },
           container: {
-            height: '90%',
+            height: '80%',
+            borderTopRightRadius: 30,
+
           }
         }}>
         <Editable
           selectedItem={selectedItem}
           myDayState={myDayState}
           setIsRBSheetOpen={setIsRBSheetOpen}
-          color={'#71A6D2'}
+          color={'#001d76'}
 
         />
       </RBSheet>
@@ -521,7 +531,7 @@ const Tasks = ({ navigation }: Props) => {
               setIsRBSheetOpen(true);
             }
           }}>
-          <Plusicon name="pluscircle" size={55} color="#C7E6FA" style={{
+          <Plusicon name="pluscircle" size={58} color="#001d76" style={{
             shadowColor: '#444167', elevation: 6, shadowOpacity: 0.6,
             shadowRadius: 20,
           }} />
@@ -538,23 +548,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 10
   },
+  futuretag:{
+    color: 'grey',
+    borderRadius: 5,
+    fontSize: 13,
+    fontWeight: '400',
+    width: 'auto',
+    marginRight:8
+  },
   icontextcontainer: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
     justifyContent: 'flex-start',
     maxHeight: 'auto',
-    padding:2
+    padding: 2
   },
   overdueTag: {
     color: '#C02136',
     fontSize: 13,
     fontWeight: '400',
-    marginRight:3
+    marginRight: 15
   },
   taskContainer: {
     flexGrow: 1,
-    backgroundColor: '#71A6D2',
+    backgroundColor: '#f1f3f4',
     padding: 10,
   },
   modalContainer: {
@@ -574,7 +592,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '400',
     width: 'auto',
-    marginRight:6
+    marginRight: 15
   },
   dueTomorrowTag: {
     color: 'grey',
@@ -582,29 +600,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '400',
     width: 'auto',
-    marginRight:3
+    marginRight: 15
   },
-  
+
   incompletetasks: {
-    shadowColor: '#005F8D',
-    backgroundColor: 'white',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.6,
-    shadowRadius: 20,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 10,
-    borderRadius: 8,
+    borderRadius: 5,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 2,
+    marginBottom: 4,
     justifyContent: 'space-between',
-    elevation: 4,
-    borderWidth: 0.8,
-    borderColor: '#004364',
-    paddingTop:9,
-    paddingBottom:9,
+    elevation: 3,
+    paddingTop: 9,
+    paddingBottom: 9,
 
   },
   addicon: {
@@ -612,25 +621,7 @@ const styles = StyleSheet.create({
     bottom: 7,
     right: 7,
   },
-  completedtasks: {
-    shadowColor: '#005F8D',
-    backgroundColor: 'white',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.6,
-    shadowRadius: 20,
-    paddingVertical: 20,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
-    justifyContent: 'space-between',
-    elevation: 6,
-    width: '100%'
-  }
+
 });
 export default Tasks;
 

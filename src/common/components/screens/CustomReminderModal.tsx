@@ -11,6 +11,7 @@ const CustomModal = (props: {
     dateTimeModalVisible: any;
     setDateTimeModalVisible: any;
     handleReminderDuedateTime: any;
+    
 }) => {
     // const [date, setDate] = useState(new Date());
     // const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
@@ -30,14 +31,14 @@ const CustomModal = (props: {
     // };
 
     const handleConfirm = (date) => {
+        hideDatePicker();
+        closeModal();
        const timeFromDateTimePicker =  format(date, 'HH:mm') //12:00
         const formattedDate = format(date, 'dd/MM/yyyy'); // 15/02/2024
         const formattedDueDateText = `${format(date, 'EEE, MMM d')}`; //thu, feb 15
         let textFromDateTimePicker = `Remind me at ${timeFromDateTimePicker} ${formattedDueDateText}`
         setDueDateTimeDisplay(textFromDateTimePicker)
         props.handleReminderDuedateTime(textFromDateTimePicker,timeFromDateTimePicker,formattedDate)
-        hideDatePicker();
-        closeModal();
     };
 
  

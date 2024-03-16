@@ -1,175 +1,245 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, Alert, ActivityIndicator, Button, Image } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, Alert, ActivityIndicator, Button, Image, ScrollView, TouchableOpacity } from 'react-native';
 import auth, { firebase } from '@react-native-firebase/auth';
+import { getAuth, signInWithPopup, GoogleAuthProvider } from '@react-native-firebase/auth'
 import { NavigationProp, ParamListBase } from '@react-navigation/native';
 import { useTasks } from './TasksContextProvider';
-import GoogleAuthProvider from '@react-native-firebase/auth';
+// import GoogleAuthProvider from '@react-native-firebase/auth';
 import { GoogleSignin, GoogleSigninButton, statusCodes } from '@react-native-google-signin/google-signin';
+import { Formik } from 'formik';
+import * as Yup from 'yup'
+// import { getAuth, signInWithPopup,GoogleAuthProvider } from "@react-native-firebase/auth";
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
 const SignUpScreen = ({ navigation }: Props) => {
   const { password, setPassword, email, setEmail } = useTasks()
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const[error,setError] = useState()
-  const [isLoading, setIsLoading] = useState(false);
-  const [showErrors, setShowErrors] = useState(false);
-  const [emailError, setEmailError] = useState('Please enter a valid email address.');
-  const [passwordError, setPasswordError] = useState('Password must be 8-12 characters, include at least one uppercase, lowercase, digit, and special symbol.');
-  const [confirmPasswordError, setConfirmPasswordError] = useState('Passwords do not match.');
-  // const [email,setEmail] = useState('')
-  // const [password,setPassword] = useState('')
-  const [userInfo, setUserInfo] = useState()
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const PasswordSchema = Yup.object().shape({
+    password: Yup.string().min(6, 'Password length should be minimum of 6 characters').required('Password is required'),
+    confirmPassword: Yup.string().oneOf([Yup.ref('password'), null], 'Passwords must match').required('Confirm Password is required'),
+    email: Yup.string().email('Invalid email').required('Email is required'),
+    fullName: Yup.string().required('Full Name is required'),
+  });
+
   useEffect(() => {
     GoogleSignin.configure({
-      
-      webClientId: '737738243110-urmsj0q3ipicbpc6ppru9mppo2s9gajf.apps.googleusercontent.com', // From Firebase Console
+
+      webClientId: '269896964001-g6ugdq8snkrvf3of68beis0f41rdal23.apps.googleusercontent.com', // From Firebase Console
     });
-  },[])
-  
-  const handleSignUp = async () => {
+  }, [])
 
-    try {
-      console.log('hello')
-      await auth().createUserWithEmailAndPassword(email, password);
-      Alert.alert('User Created Successfully');
-      navigation.navigate('LoginScreen');
-    } catch (error) {
-      console.error('Error creating user:', error);
-      Alert.alert('Signup Failed',);
-    } finally {
-      // setIsLoading(false); // Stop loading
-    }
-  };
+  const onFooterLinkPress = () => {
+    navigation.navigate('LoginScreen');
+  }
 
   
-  const signIn = async () => {
-    
+  
+
+  const handleSignUp = async (values) => {
+    console.log('Received values:', values); // Log received values
+
     try {
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-      console.log('userInfo',userInfo)
-      const googleCredential = auth.GoogleAuthProvider.credential(userInfo.idToken,userInfo.accessToken);
+      // Check if email and password are not empty or null
+      if (!values.email || !values.password) {
+        setError('Email and password cannot be empty');
+        return;
+      }
+      setLoading(true);
+      // Attempt to create a new user with the provided email and password
+      const res = await auth().createUserWithEmailAndPassword(values.email, values.password);
+      
+      await res.user.sendEmailVerification();
+      const uid = res.user.uid;
+
+      // Reference to the users collection in Firestore
+      const usersRef = firebase.firestore().collection('users');
+
+      // Create a new document for the user in Firestore
+      await usersRef.doc(uid).set({
+        email: values.email,
+        fullName: values.fullName,
+
+      });
+      
+      
+      console.log('User registered and document created.');
      
-
-      const userCredential = await auth().signInWithCredential(googleCredential);
-      console.log('signed in with google', userCredential.user);
-      setUserInfo(userInfo);
+      firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+          if (user.emailVerified) {
+            Alert.alert('Welcome! Your email has been verified.');
+            navigation.navigate('LoginScreen');
+          } else {
+            Alert.alert('Please verify your email address.');
+          }
+        }
+      });
       
     } catch (error) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        console.log('user cancelled the login flow')
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        console.log('operation (e.g. sign in) is in progress already')
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        // play services not available or outdated
-      } else {
-        setError(error)
-        console.log('error in googlesignin',error)
-      }
-      setError(error)
+      console.error(error);
+      // Handle errors here
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
-  // const handleGoogleSignIn = async () => {
-  //   try {
-  //     // Check if your device supports Google Play
-  //     await GoogleSignin.hasPlayServices();
-  //     // Get the users ID token
-  //     const { idToken } = await GoogleSignin.signIn();
 
-  //     // Create a Google credential with the token
-  //     const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-  //     navigation.navigate('Home');
-  //     // Sign-in the user with the credential
-  //     return auth().signInWithCredential(googleCredential);
-  //     // Navigate to the next screen or do something else
 
-  //   } catch (error) {
-  //     console.error('Google Sign-In Error:', error.stack);
-  //     Alert.alert('Google Sign-In Failed');
-  //   }
-  // };
   return (
+
     <View style={styles.container}>
-      {userInfo !== null && <Text>{JSON.stringify(userInfo)}</Text>}
-      {/* {userInfo !== null && <Image source={{uri:userInfo.user.photo}}/>} */}
-      <Text style={{ color: '#e93766', fontSize: 40 }}>Sign Up</Text>
-      {/* {emailError &&
-          <Text style={{ color: 'red' }}>
-            {emailError}
-          </Text>} */}
-      <TextInput
-        placeholder="Email"
-        autoCapitalize="none"
-
-        onChangeText={text => setEmail(text)}
-        value={email}
-      />
-      <TextInput
-        secureTextEntry
-        placeholder="Password"
-        autoCapitalize="none"
-
-        onChangeText={text => setPassword(text)}
-        value={password}
-      />
-      <Button title="Sign Up" color="#e93766" onPress={handleSignUp} />
-      <View>
-        <Text> Already have an account? <Text onPress={() => navigation.navigate('LoginScreen')} style={{ color: '#e93766', fontSize: 18 }}> Login </Text></Text>
-        {/* <Button title="Sign Up with Google" color="#e93766" onPress={signIn} /> */}
-       {userInfo ? (<Button title = "logout"/>) :(
-        <GoogleSigninButton onPress = {signIn}/>
-       )}
+      <View style={styles.headerContainer}>
+        <Image source={require('../../assets/images/regis.png')} style={{ width: 170, height: 170 }} />
       </View>
+      {loading ? ( // Conditional rendering based on loading state
+        <ActivityIndicator size="large" color="#788eec" />
+      ) : (
+        <ScrollView
+          style={{ flex: 1, width: '100%' }}
+          keyboardShouldPersistTaps="always">
+
+
+
+          <Formik
+            initialValues={{ email: '', password: '', fullName: '', confirmPassword: '' }}
+            validationSchema={PasswordSchema}
+            onSubmit={(values) => handleSignUp(values)}
+          >
+            {({
+              values,
+              errors,
+              touched,
+              handleChange,
+              handleBlur,
+              handleSubmit,
+              isSubmitting,
+            }) => (
+              <View>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Full Name"
+                  onChangeText={handleChange('fullName')}
+                  onBlur={handleBlur('fullName')}
+                  value={values.fullName}
+                />
+                {touched.fullName && errors.fullName &&
+                  <Text style={{ color: 'red', marginLeft: 30 }}>{errors.fullName}</Text>
+                }
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email"
+                  onChangeText={handleChange('email')}
+                  onBlur={handleBlur('email')}
+                  value={values.email}
+                />
+                {touched.email && errors.email &&
+                  <Text style={{ color: 'red', marginLeft: 30 }}>{errors.email}</Text>
+                }
+                <TextInput
+                  style={styles.input}
+                  placeholder="Password"
+                  secureTextEntry
+                  onChangeText={handleChange('password')}
+                  onBlur={handleBlur('password')}
+                  value={values.password}
+                />
+                {touched.password && errors.password &&
+                  <Text style={{ color: 'red', marginLeft: 30 }}>{errors.password}</Text>
+                }
+                <TextInput
+                  style={styles.input}
+                  placeholder="Confirm Password"
+                  secureTextEntry
+                  onChangeText={handleChange('confirmPassword')}
+                  onBlur={handleBlur('confirmPassword')}
+                  value={values.confirmPassword}
+                />
+                {touched.confirmPassword && errors.confirmPassword &&
+                  <Text style={{ color: 'red', marginLeft: 30 }}>{errors.confirmPassword}</Text>
+                }
+                <Pressable style={styles.button} onPress={handleSubmit} disabled={isSubmitting}>
+                  <Text style={styles.buttonTitle}>Sign Up</Text>
+                </Pressable>
+                {error !== '' &&
+                  <Text style={{ color: 'red', textAlign: 'center', marginTop: 10 }}>{error}</Text>
+                }
+              </View>
+            )}
+          </Formik>
+          <View style={styles.footerView}>
+            <Text style={styles.footerText}>Already have an account? <Text style={styles.footerLink} onPress={onFooterLinkPress}>Log in</Text></Text>
+          </View>
+          
+        </ScrollView>
+      )}
     </View>
   );
 };
 const styles = StyleSheet.create({
   container: {
-
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-    marginTop: 300
+    flex: 1,
+    alignItems: 'center'
   },
-  errorText: {
-    color: 'red',
-    fontSize: 12,
-    marginTop: 5,
+  headerContainer: {
+    flexDirection: 'row', // Arrange elements horizontally
+    alignItems: 'center', // Align vertically
+    padding: 15,
+    // Example background color
   },
-  title: {
+  headerText: {
     fontSize: 24,
+    color: '#fff', // Example text color
     fontWeight: 'bold',
-    marginBottom: 20,
-    color: 'black'
+  },
+  logo: {
+    flex: 1,
+    height: 120,
+    width: 90,
+    alignSelf: "center",
+    margin: 30
   },
   input: {
-    height: 40,
-    width: '100%',
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 16,
-    paddingHorizontal: 10,
+    height: 48,
+    borderRadius: 5,
+    overflow: 'hidden',
+    backgroundColor: 'white',
+    marginTop: 10,
+    marginBottom: 10,
+    marginLeft: 30,
+    marginRight: 30,
+    paddingLeft: 16
   },
   button: {
-    backgroundColor: 'blue',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    backgroundColor: '#788eec',
+    marginLeft: 30,
+    marginRight: 30,
+    marginTop: 20,
+    height: 48,
     borderRadius: 5,
-    marginBottom: 16,
+    alignItems: "center",
+    justifyContent: 'center'
   },
-  buttonText: {
-    color: 'black',
+  buttonTitle: {
+    color: 'white',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold"
   },
-  signupLink: {
-    marginTop: 10,
+  footerView: {
+    flex: 1,
+    alignItems: "center",
+    marginTop: 20
   },
-  signupText: {
-    color: 'blue',
+  footerText: {
     fontSize: 16,
+    color: '#2e2e2d'
   },
+  footerLink: {
+    color: "#788eec",
+    fontWeight: "bold",
+    fontSize: 16
+  }
 });
 
 export default SignUpScreen

@@ -1,41 +1,41 @@
 {
   "project_info": {
-    "project_number": "737738243110",
-    "project_id": "react-native-todo-93ead",
-    "storage_bucket": "react-native-todo-93ead.appspot.com"
+    "project_number": "269896964001",
+    "project_id": "todoappp-4f6da",
+    "storage_bucket": "todoappp-4f6da.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:737738243110:android:57f26beba4f3b6b4ee7ae7",
+        "mobilesdk_app_id": "1:269896964001:android:4dfc4f87d823d213341de0",
         "android_client_info": {
-          "package_name": "com.todo"
+          "package_name": "com.todo.app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "737738243110-bgo1e2sdbvka1l54bh88qc0d7c1oa9u6.apps.googleusercontent.com",
+          "client_id": "269896964001-obtkj6djp139qfp1408d9h0kilh7np94.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.todo",
-            "certificate_hash": "1904c32aa82904714ff4473079625717a50db8da"
+            "package_name": "com.todo.app",
+            "certificate_hash": "5bfd8f4f1081fdf51a68d29c92f81a96ef528c91"
           }
         },
         {
-          "client_id": "737738243110-urmsj0q3ipicbpc6ppru9mppo2s9gajf.apps.googleusercontent.com",
+          "client_id": "269896964001-g6ugdq8snkrvf3of68beis0f41rdal23.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDDJDWVmom5EbfmkRMmYo4OHEbZSBG48tA"
+          "current_key": "AIzaSyAw3RNiDxYuSRjNlFu1Tb2i_gsocufucrY"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "737738243110-urmsj0q3ipicbpc6ppru9mppo2s9gajf.apps.googleusercontent.com",
+              "client_id": "269896964001-g6ugdq8snkrvf3of68beis0f41rdal23.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

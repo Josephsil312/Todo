@@ -32,11 +32,12 @@ const CustomModal = (props: {
     const handleConfirm = (date) => {
         console.log('date',date)
         const formattedDate = format(date, 'dd/MM/yyyy');
-        const formattedDueDateText = `Due on ${format(date, 'EEE, MMM d')}`;
-        props.onDueDateSelected(formattedDueDateText, formattedDate);
-        hideDatePicker();
-        setDueDate(formattedDate)//check if this is required
         closeModal();
+        hideDatePicker();
+        const formattedDueDateText = `Due on \n${format(date, 'EEE, MMM d')}`;
+        props.onDueDateSelected(formattedDueDateText, formattedDate);
+        setDueDate(formattedDate)//check if this is required
+        
     };
 
     const formatDateToDayOfWeek = (selectedDate: any) => {
@@ -72,6 +73,7 @@ const CustomModal = (props: {
                                         fontFamily="SuisseIntl"
                                         marginLeft={10}
                                         marginVertical={10}
+                                        width={'100%'}
                                     />
                                 </View>
 
@@ -83,7 +85,7 @@ const CustomModal = (props: {
                                     <HeadingText
                                         textString={`Tomorrow (${formatDateToDayOfWeek(tomorrow)})`}
                                         fontSize={16}
-                                        
+                                        width={'100%'}
                                         fontFamily="SuisseIntl"
                                         marginLeft={10}
                                         marginVertical={10}
@@ -97,7 +99,7 @@ const CustomModal = (props: {
                                     <HeadingText
                                         textString={`Pick a date`}
                                         fontSize={16}
-                                        
+                                        width={'100%'}
                                         fontFamily="SuisseIntl"
                                         marginLeft={10}
                                         marginVertical={10}
@@ -167,6 +169,7 @@ const styles = StyleSheet.create({
     modalcontainer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
+        paddingLeft:20
     }
 });

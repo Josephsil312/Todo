@@ -71,8 +71,8 @@ const AddingTasks = (props: {
           <Pressable onPress={props.handleAddTask} style={styles.addingtaskicon}>
             {
               props.task.trim() !== ''
-                ? <Iconn name="arrow-up-circle" size={30} color={props.color} />
-                : <Iconn name="arrow-up-circle-outline" size={30} color="grey" />
+                ? <Iconn name="arrow-up-circle" size={37} color={props.color} />
+                : <Iconn name="arrow-up-circle-outline" size={37} color="grey" />
             }
           </Pressable>
         </View>
@@ -89,33 +89,33 @@ const AddingTasks = (props: {
           }}
         >
           <TouchableOpacity onPress={openModal}>
-            <View style={{ flexDirection: 'row', paddingLeft: 5, justifyContent: 'space-between', borderRadius: 15, backgroundColor: '#71A6D2', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', paddingLeft: 5, justifyContent: 'space-between', borderRadius: 15, backgroundColor: props.color, alignItems: 'center' }}>
               <Calendarr name="calendar" size={19} color={'white'} style={{ marginRight: 3 }} />
 
               <HeadingText
                 textString={
                   (selectedDueDate || 'Set Due Date')
                 }
-                fontSize={14}
+                fontSize={16}
                 fontFamily="SuisseIntl"
                 style={styles.dueDates}
                 color='white' />
-              {selectedDueDate && <Close name="closecircle" style={{paddingRight: 5 }} size={15} color={'white'} onPress={() => { setDueDate(''); setSelectedDueDate('') }} />}
+              {selectedDueDate && <Close name="closecircle" style={{paddingRight: 5 }} size={17} color={'white'} onPress={() => { setDueDate(''); setSelectedDueDate('') }} />}
               {/* </HeadingText> */}
 
             </View>
           </TouchableOpacity>
           <TouchableOpacity onPress={openDateTimeModal}>
-            <View style={{ flexDirection: 'row', paddingLeft: 5, justifyContent: 'flex-start', borderRadius: 15, backgroundColor: '#71A6D2', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', paddingLeft: 5, justifyContent: 'flex-start', borderRadius: 15, backgroundColor: props.color, alignItems: 'center' }}>
               <Remind name="bells" size={20} color="white" />
               <HeadingText
                 textString={((dueDateTimeReminderText) || 'Remind me')}
-                fontSize={14}
+                fontSize={16}
                 textDecorationLine="none"
                 color='white'
                 style={styles.reminder}
               />
-              {dueDateTimeReminderText && <Close name="closecircle" size={15} style={{ paddingRight: 5 }} color="white" onPress={() => { setDueDateTimeReminderText(''); setDueDateTimeReminderTime(''); setDueDateTimeReminderDate('') }} />}
+              {dueDateTimeReminderText && <Close name="closecircle" size={17} style={{ paddingRight: 5 }} color="white" onPress={() => { setDueDateTimeReminderText(''); setDueDateTimeReminderTime(''); setDueDateTimeReminderDate('') }} />}
 
             </View>
           </TouchableOpacity>
@@ -147,29 +147,33 @@ const styles = StyleSheet.create({
   },
   dueDates: {
     borderRadius: 10,
-    paddingLeft: 7,
+    padding: 7,
+    paddingLeft: 7, // Adjust individual paddings if needed (optional)
+    paddingRight: 7,
+    paddingTop: 1,
+    paddingBottom: 2,
     color: 'white',
     letterSpacing: 0.4,
     marginVertical: 5,
     textShadowRadius: 2,
     textShadowColor: '#5e54a0',
-    paddingBottom: 5,
-    paddingTop: 3,
-    paddingRight: 7,
+    maxWidth: 165,
+    
   },
   reminder: {
     borderRadius: 10,
-    paddingLeft: 7,
+    // padding: 7,
+    paddingLeft: 7, // Adjust individual paddings if needed (optional)
+    paddingRight: 7,
+    paddingTop: 2,
+    paddingBottom: 2,
     color: 'white',
     letterSpacing: 0.4,
     marginVertical: 5,
     textShadowRadius: 2,
     textShadowColor: '#5e54a0',
-    paddingBottom: 4,
-    paddingTop: 3,
-    paddingRight: 7,
-    maxWidth: 150,
-    height:'auto'
+    maxWidth: 165,
+   
   }
 
 });
