@@ -41,7 +41,7 @@ function HomeScreenNavigator(props:any): JSX.Element {
                 fontSize: 25
               },
               headerStyle: {
-                backgroundColor: '#7568f8', 
+                backgroundColor: '#5A69AF', 
               },
               headerTintColor: '#fff',
               headerLeft: () => (
@@ -65,16 +65,16 @@ function HomeScreenNavigator(props:any): JSX.Element {
                 fontSize: 25
               },
               headerStyle: {
-                backgroundColor: '#375E31', 
+                backgroundColor: '#B1F2D6', 
               },
-              headerTintColor: '#fff',
+              headerTintColor: '#004700',
               headerLeft: () => (
                 <Pressable
                   onPress={() => {
                     navigation.goBack();
                   }}
                 >
-                  <Image source={require('../../assets/images/chevron_left.png')} style={{ width: 23, height: 23,marginRight:20 }} />
+                  <LeftChevron name="left" size={22} color="grey" style={{ color: '#004700',marginRight:20 }}   />
                 </Pressable>
               ),
             })}
@@ -89,7 +89,7 @@ function HomeScreenNavigator(props:any): JSX.Element {
                 fontSize: 25
               },
               headerStyle: {
-                backgroundColor: '#A755C2', 
+                backgroundColor: '#0D5D56', 
               },
               headerTintColor: '#fff',
               headerLeft: () => (
@@ -98,7 +98,7 @@ function HomeScreenNavigator(props:any): JSX.Element {
                     navigation.goBack();
                   }}
                 >
-                  <Image source={require('../../assets/images/chevron_left.png')} style={{ width: 23, height: 23,marginRight:20 }} />
+                 <LeftChevron name="left" size={22} color="#8FD5A6" style={{marginRight:20 }}   />
                 </Pressable>
               ),
             })}
