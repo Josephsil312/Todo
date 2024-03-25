@@ -1,5 +1,6 @@
 apply plugin: "com.android.application"
 apply plugin: "com.facebook.react"
+apply plugin: "com.google.gms.google-services"
 
 import com.android.build.OutputFile
 
@@ -32,7 +33,7 @@ react {
     // bundleCommand = "ram-bundle"
     //
     //   The path to the CLI configuration file. Default is empty.
-    // bundleConfig = file(../rn-cli.config.js)
+    // bundleConfig = file(../rn-cli.config.js)a
     //
     //   The name of the generated asset file containing your JS bundle
     // bundleAssetName = "MyApplication.android.bundle"
@@ -93,24 +94,32 @@ android {
 
     compileSdkVersion rootProject.ext.compileSdkVersion
 
-    namespace "com.todo"
+    namespace "com.todo.app"
     defaultConfig {
-        applicationId "com.todo"
+        applicationId "com.todo.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        multiDexEnabled true
+        resConfigs "en", "US"
     }
 
     splits {
         abi {
             reset()
             enable enableSeparateBuildPerCPUArchitecture
-            universalApk false  // If true, also generate a universal APK
+            universalApk false// If true, also generate a universal APK
             include (*reactNativeArchitectures())
         }
     }
     signingConfigs {
+        release {
+            storeFile file('/Users/josephsilvester/Documents/todo/Todo/android/app/my-upload-key.keystore')
+            storePassword 'Josi16ee@1234'
+            keyAlias 'my-key-alias'
+            keyPassword 'Josi16ee@1234'
+        }
         debug {
             storeFile file('debug.keystore')
             storePassword 'android'
@@ -125,7 +134,7 @@ android {
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
@@ -153,8 +162,14 @@ dependencies {
     implementation("com.facebook.react:react-android")
     implementation project(':react-native-splash-screen')
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.0.0")
+    // Import the BoM for the Firebase platform
+    implementation(platform("com.google.firebase:firebase-bom:32.7.1"))
 
+    // Declare the dependency for the Cloud Firestore library
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-firestore")
     debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}")
+   
     debugImplementation("com.facebook.flipper:flipper-network-plugin:${FLIPPER_VERSION}") {
         exclude group:'com.squareup.okhttp3', module:'okhttp'
     }

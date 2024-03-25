@@ -1,6 +1,11 @@
+import React from 'react';
+// ... other imports
+
+
 export interface HeadingTextProps {
   textString?: string | number | boolean;
   flexDirection?: string;
+  children?: React.ReactNode;
   marginBottom?: number;
   marginTop?: number;
   marginLeft?: string | number;
@@ -15,7 +20,7 @@ export interface HeadingTextProps {
   fontSize?: number;
   numberOfLines?: number;
   ellipsizeMode?: string;
-  fontWeight?: string;
+  fontWeight?: number;
   fontFamily?: string;
   textAlign?: string;
   height?: number;
@@ -23,6 +28,7 @@ export interface HeadingTextProps {
   lineHeight?: string;
   multiline?: boolean;
   fontStyle?: string;
+  alignItems?:string;
   includeFontPadding?: boolean;
   top?: number;
   alignSelf?: string;
@@ -39,6 +45,8 @@ export interface HeadingTextProps {
   right?:number;
   bottom?:number;
   style?:object;
+  onPress?: () => void;
+  ref?:any;
 }
 
 export interface TextInputProps {
@@ -67,6 +75,8 @@ export interface TextInputProps {
   onSubmitEditing?: () => void;
   marginTop?: number;
   marginBottom?: number;
+  returnKeyType?:string;
+  textDecorationLine?:string;
 }
 
 export type GroupStepProps = {
