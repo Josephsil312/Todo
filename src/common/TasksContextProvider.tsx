@@ -71,11 +71,13 @@ type TasksContextType = {
     setNoteContent:any;
     isLoggedIn:any;
     setIsLoggedIn:any;
+   
 };
 
 const TasksContextProvider = ({ children }: PropsWithChildren<{}>) => {
     const [tasks, setTasks] = useState<Task[]>([]);
-    const [isLoggedIn,setIsLoggedIn] = useState(false)
+    const [isLoggedIn,setIsLoggedIn] = useState(false);
+    
     const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
     const [starId, setStarId] = useState('');
     const [captureDateTimeReminderDate,setCaptureDateTimeReminderDate] = useState('')

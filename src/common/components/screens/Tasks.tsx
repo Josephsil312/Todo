@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import LottieView from 'lottie-react-native';
 import Animated, { Easing, LightSpeedInLeft, LightSpeedOutRight } from 'react-native-reanimated'
 import firestore, { firebase } from '@react-native-firebase/firestore';
 import React, { useState, useRef, useEffect } from 'react';
@@ -32,24 +33,34 @@ import { isAfter, isYesterday, subDays, isSameDay, isTomorrow, parse, isBefore, 
 import { getFirestore, collection, addDoc } from '@react-native-firebase/firestore';
 import auth, { FirebaseAuthError } from '@react-native-firebase/auth';
 import Bell from 'react-native-vector-icons/EvilIcons';
-import notifee, { EventType, TimestampTrigger, TriggerType } from '@notifee/react-native';
+import messaging from '@react-native-firebase/messaging';
 import Iconfont from 'react-native-vector-icons/Fontisto';
 import SwipeableRow from './SwipableRow';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import notifee, { EventType, TimestampTrigger, TriggerType } from '@notifee/react-native';
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
 
+// Notifications.setNotificationHandler({
+//   handleNotification: async () => ({
+//     shouldShowAlert: true,
+//     shouldPlaySound: true,
+//     shouldSetBadge: false,
+//   }),
+// });
+
 const Tasks = ({ navigation }: Props) => {
   const refRBSheet = useRef<RBSheet>(null);
   const refEditableTask = useRef<RBSheet>(null);
-
+  const [blurView,setBlurView] = useState(false)
   const [completedTaskId, setCompletedTaskId] = useState(null);
   const [task, setTask] = useState('');
   const [isRBSheetOpen, setIsRBSheetOpen] = useState(false);
   const [editableModal, setEditableModal] = useState(false)
   const [expoPushToken, setExpoPushToken] = useState<string>();
+  const [isBlurEffectVisible, setIsBlurEffectVisible] = useState(false);
   const {
     setDueDateAdded,
     showCompletedDropdown,
@@ -76,7 +87,8 @@ const Tasks = ({ navigation }: Props) => {
   const userCollection = firestore().collection('users').doc(userId).collection('tasks');
   // console.log('userCollectionn',userCollectionn)
   // const userCollection = firestore().collection('users')
-
+ 
+  const [notification, setNotification] = useState(false);
   const handleAddTask = async () => {
     if (task.trim() !== '') {
       try {
@@ -97,117 +109,104 @@ const Tasks = ({ navigation }: Props) => {
 
       } catch (error) {
         console.error('Error adding task:', error);
-
       }
-
     }
-
-    // if (dueDateTimeReminderDate.trim() !== '' && dueDateTimeReminderTime.trim() !== '') {
-    //   onDisplayNotification(dueDateTimeReminderDate, dueDateTimeReminderTime, task);
-    // }
-
+    await onDisplayNotification(dueDateTimeReminderDate, dueDateTimeReminderTime, task)
   };
 
-  // async function onDisplayNotification(dueDateTimeReminderDatee, dueDateTimeReminderTimee, taskName) {
-  //   // Request permissions (required for iOS)
-  //   try {
-  //     await notifee.requestPermission()
-  //     const dateParts = dueDateTimeReminderDatee.split('/');
-  //     const timeParts = dueDateTimeReminderTimee.split(':');
-  //     const year = parseInt(dateParts[2], 10);
-  //     const month = parseInt(dateParts[1], 10) - 1; // Adjust for 0-index
-  //     const day = parseInt(dateParts[0], 10);
-  //     const hours = parseInt(timeParts[0], 10);
-  //     const minutes = parseInt(timeParts[1], 10);
+  async function onDisplayNotification(dueDateTimeReminderDatee, dueDateTimeReminderTimee, taskName) {
+    // Request permissions (required for iOS)
+    try {
+      await notifee.requestPermission()
 
-  //     const notificationDateTime = new Date(year, month, day, hours, minutes);
+      if (!dueDateTimeReminderDatee || !dueDateTimeReminderTimee) {
+        console.error('Reminder date or time is not provided');
+        return;
+      }
+      const dateParts = dueDateTimeReminderDatee.split('/');
+      const timeParts = dueDateTimeReminderTimee.split(':');
 
+      if (dateParts.length !== 3 || timeParts.length !== 2) {
+        console.error('Invalid date or time format');
+        return;
+      }
+      const year = parseInt(dateParts[2], 10);
+      const month = parseInt(dateParts[1], 10) - 1; // Adjust for 0-index
+      const day = parseInt(dateParts[0], 10);
+      const hours = parseInt(timeParts[0], 10);
+      const minutes = parseInt(timeParts[1], 10);
 
-  //     const trigger: TimestampTrigger = {
-  //       type: TriggerType.TIMESTAMP,
-  //       timestamp: notificationDateTime.getTime(), // Scheduled time
-  //     };
+      const notificationDateTime = new Date(year, month, day, hours, minutes);
 
-  //     const channelId = await notifee.createChannel({
-  //       id: 'default',
-  //       name: 'Default Channel',
-  //     });
+      if (isNaN(notificationDateTime.getTime())) {
+        console.error('Invalid reminder date or time');
+        return;
+      }
 
-  //     // Display a notification
+      const trigger: TimestampTrigger = {
+        type: TriggerType.TIMESTAMP,
+        timestamp: notificationDateTime.getTime(), // Scheduled time
+        alarmManager:true,
+      };
 
-  //     await notifee.createTriggerNotification(
-  //       {
-  //         title: 'Reminder',
-  //         body: `${taskName}\nscheduled at ${dueDateTimeReminderTimee}`,
-  //         android: {
-  //           channelId,
-  //         },
-  //         id: channelId
+      const channelId = await notifee.createChannel({
+        id: 'default',
+        name: 'Default Channel',
+      });
 
-  //       },
-  //       trigger,
-  //     );
+      // Display a notification
 
-  //   } catch (error) {
-  //     console.log('error in notification', error)
-  //   }
+      await notifee.createTriggerNotification(
+        {
+          title: 'Reminder',
+          body: `${taskName}\nscheduled at ${dueDateTimeReminderTimee},${dueDateTimeReminderDatee}`,
+          android: {
+            channelId,
+          },
+          id: channelId
+        },
+        trigger,
+      );
+    } catch (error) {
+      console.log('error in notification', error)
+    }
+  }
 
-  // }
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: false,
-      shouldSetBadge: false,
-    }),
-  });
+  async function onBackgroundEvent(event) {
+    if (event.type === EventType.DISMISSED) {
+      console.log('User dismissed notification', event.notification);
+    } else if (event.type === EventType.PRESS) {
+      console.log('User pressed notification', event.notification);
+    }
+  }
+  notifee.onBackgroundEvent(onBackgroundEvent);
 
-  // useEffect(() => {
-  //   registerForPushNotificationsAsync().then((token) => setExpoPushToken(token))
-  // },[])
-
-  console.log('token from expo:',expoPushToken)
-  // async function registerForPushNotificationsAsync() {
-  //   let token;
+  async function requestUserPermission() {
+    try {
+      const authStatus = await messaging().requestPermission();
+      const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
   
-  //   if (Platform.OS === 'android') {
-  //     await Notifications.setNotificationChannelAsync('default', {
-  //       name: 'default',
-  //       importance: Notifications.AndroidImportance.MAX,
-  //       vibrationPattern: [0, 250, 250, 250],
-  //       lightColor: '#FF231F7C',
-  //     });
-  //   }
+      if (enabled) {
+        console.log('Authorization status:', authStatus);
+      }
+    } catch (error) {
+      console.error('Error requesting user permission:', error);
+      // Handle the error as needed (e.g., show a message to the user)
+    }
+  }
   
-  //   if (Device.isDevice) {
-  //     const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  //     let finalStatus = existingStatus;
-  //     if (existingStatus !== 'granted') {
-  //       const { status } = await Notifications.requestPermissionsAsync();
-  //       finalStatus = status;
-  //     }
-  //     if (finalStatus !== 'granted') {
-  //       Alert.alert('Failed to get push token for push notification!');
-  //       return;
-  //     }
-     
-  //     token = (await Notifications.getExpoPushTokenAsync({ projectId: 'your-project-id' })).data;
-  //     console.log(token);
-  //   } else {
-  //     Alert.alert('Must use physical device for Push Notifications');
-  //   }
-  
-  //   return token;
-  // }
-  // async function onBackgroundEvent(event) {
-  //   if (event.type === EventType.DISMISSED) {
-  //     console.log('User dismissed notification', event.notification);
-  //   } else if (event.type === EventType.PRESS) {
-  //     console.log('User pressed notification', event.notification);
-  //     // Additional handling for press event
-  //   }
-  //   // Handle other event types as needed
-  // }
-  // notifee.onBackgroundEvent(onBackgroundEvent);
+
+  const getToken = async () =>{
+    const token = await messaging().getToken();
+    console.log('Token:',token)
+  }
+
+  useEffect(() => {
+    requestUserPermission()
+    getToken()
+  },[])
 
   useEffect(() => {
     const unsubscribe = userCollection
@@ -226,7 +225,7 @@ const Tasks = ({ navigation }: Props) => {
   const deleteTask = async (id) => {
     try {
       await userCollection.doc(id).delete();
-      await notifee.cancelNotification(id)
+      await notifee.cancelNotification(id);
       setTask('');
     } catch (error) {
       console.error('Error deleting task from Firestore:', error);
@@ -238,8 +237,9 @@ const Tasks = ({ navigation }: Props) => {
       const taskRef = userCollection.doc(firestoreDocId)
       console.log('taskRef', taskRef)
       await taskRef.set({ isCompleted: true }, { merge: true });
+      // await Notifications.cancelScheduledNotificationAsync(firestoreDocId);
+      await notifee.cancelNotification(firestoreDocId);
       setCompletedTaskId(firestoreDocId);
-      await notifee.cancelNotification(firestoreDocId)
       console.log('Task completed successfully.');
     } catch (error) {
       console.error('Error updating completed task:', error);
@@ -252,9 +252,7 @@ const Tasks = ({ navigation }: Props) => {
 
   const toggleTask = async (firestoreDocId) => {
     try {
-
       const taskRef = userCollection.doc(firestoreDocId);
-      // show()
       await taskRef.set({ isCompleted: false }, { merge: true });
       console.log('Task toggled successfully.');
     } catch (error) {
@@ -278,11 +276,13 @@ const Tasks = ({ navigation }: Props) => {
   }
 
   const openRBSheet = (item: any) => {
+    setIsRBSheetOpen(true)
     if (refEditableTask?.current) {
       refEditableTask.current.open();
-      setIsRBSheetOpen(true)
+      
       setSelectedItem(item)
       setMyDayState(item.myDay)
+      
     }
   };
 
@@ -299,9 +299,7 @@ const Tasks = ({ navigation }: Props) => {
 
     return (<>
       <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 5 }}>
-
         <Calendarr name="calendar" size={15} color={iconColor} style={{ marginRight: 3 }} />
-
         {isBefore(parse(item.dateSet, 'dd/MM/yyyy', new Date()), startOfToday()) ? (
           <Text style={styles.overdueTag}>
             {isYesterday(parse(item.dateSet, 'dd/MM/yyyy', new Date())) ? (
@@ -326,26 +324,19 @@ const Tasks = ({ navigation }: Props) => {
     )
   }
 
-
-
-
+  
   const sections = [
     { data: allTasks.filter((task) => !task.isCompleted) },
     { title: 'Completed Tasks', data: allTasks.filter((task) => task.isCompleted) },
   ];
 
   console.log('alltasks', allTasks)
-
+console.log('isRBSheetOpen',isRBSheetOpen)
   return (
     <>
       {isLoading && ( // Conditionally render the activity indicator
-
         <ActivityIndicator size="large" color="#001d76" />
-
       )}
-
-
-
       {isRBSheetOpen &&
         <View
           style={{
@@ -355,8 +346,6 @@ const Tasks = ({ navigation }: Props) => {
           }}
         />
       }
-
-
       <KeyboardAvoidingView style={styles.taskContainer} keyboardShouldPersistTaps='always'>
         {!isLoading && (
           <GestureHandlerRootView>
@@ -365,7 +354,6 @@ const Tasks = ({ navigation }: Props) => {
               keyExtractor={item => item.firestoreDocId}
               renderItem={({ item }) => (
                 <>
-
                   <SwipeableRow onDelete={() => deleteTask(item.firestoreDocId)}
                   >
                     <Animated.View entering={LightSpeedInLeft.duration(200).easing(Easing.ease)} exiting={LightSpeedOutRight.duration(200).easing(Easing.ease)}>
@@ -373,7 +361,6 @@ const Tasks = ({ navigation }: Props) => {
                         style={styles.incompletetasks}
                         onPress={() => { setNoteContent(item.Note); openRBSheet(item.name); setEditableModal(true); setTaskCompleted(item.isCompleted); setDocId(item.firestoreDocId); setMyDayState(item.myDay); setDueDateAdded(item.dateSet); setCaptureDateTimeReminderDate(item.dateReminder); setCaptureDateTimeReminderTime(item.timeReminder) }}
                       >
-
                         <View style={styles.icontextcontainer}>
                           {item.isCompleted ? (
                             <TouchableOpacity onPress={() => {
@@ -403,7 +390,6 @@ const Tasks = ({ navigation }: Props) => {
                                 <>
                                   {renderDateConditional(item)}
                                 </>
-
                               )}
                               {item.myDay && <Iconfont name="day-sunny" size={15} color={'grey'} style={{ marginRight: 5 }} />}
                               {item.myDay && <HeadingText
@@ -417,9 +403,7 @@ const Tasks = ({ navigation }: Props) => {
                               }
                               {(item.timeReminder || item.dateReminder) && <Bell name="bell" size={15} color={'grey'} style={{ marginRight: 5 }} />}
                             </View>
-
                           </View>
-
                         </View>
                         <Pressable key={item.firestoreDocId} onPress={() => starChange(item.firestoreDocId)} style={{ paddingLeft: 20 }}>
                           {item.isImportant ? <Iconfromentypo name="star" size={24} color="grey" style={{ color: '#001d76' }} />
@@ -455,9 +439,7 @@ const Tasks = ({ navigation }: Props) => {
               }}
             />
           </GestureHandlerRootView>
-
         )}
-
       </KeyboardAvoidingView>
 
       <RBSheet
@@ -467,7 +449,8 @@ const Tasks = ({ navigation }: Props) => {
         animationType="fade"
         height={70}
         isOpen={isRBSheetOpen}
-        onClose={() => setIsRBSheetOpen(false)}
+        onOpen={() => setIsBlurEffectVisible(true)}
+        onClose={() => { setIsRBSheetOpen(false); setIsBlurEffectVisible(false)}}
         customStyles={{
           wrapper: {
             backgroundColor: 'transparent',
@@ -496,7 +479,7 @@ const Tasks = ({ navigation }: Props) => {
         animationType="slide"
         height={70}
         isOpen={isRBSheetOpen}
-        onClose={() => setIsRBSheetOpen(false)}
+        onClose={() => {setIsRBSheetOpen(false)}}
         customStyles={{
           wrapper: {
             backgroundColor: 'transparent',
@@ -529,6 +512,7 @@ const Tasks = ({ navigation }: Props) => {
             if (refRBSheet?.current) {
               refRBSheet.current.open();
               setIsRBSheetOpen(true);
+             
             }
           }}>
           <Plusicon name="pluscircle" size={58} color="#001d76" style={{
@@ -548,13 +532,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 10
   },
-  futuretag:{
+  futuretag: {
     color: 'grey',
     borderRadius: 5,
     fontSize: 13,
     fontWeight: '400',
     width: 'auto',
-    marginRight:8
+    marginRight: 8
   },
   icontextcontainer: {
     flexDirection: 'row',

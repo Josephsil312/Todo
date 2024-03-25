@@ -65,7 +65,7 @@ const HomeScreen = ({ navigation }: Props) => {
         <TouchableOpacity
           style={styles.imageTextContainer}
           onPress={() => navigation.navigate('Important')}>
-          <Star name="star" size={22} color="red" style={{ marginRight: 20 }} />
+          <Star name="star" size={22} color="#C02136" style={{ marginRight: 20 }} />
           <HeadingText
             textString={'Important'}
             fontSize={16}
@@ -76,7 +76,7 @@ const HomeScreen = ({ navigation }: Props) => {
         <TouchableOpacity
           style={styles.imageTextContainer}
           onPress={() => navigation.navigate('Planned')}>
-          <Calendar name="calendar-today" size={22} color="#42EA19" style={{ marginRight: 20 }} />
+          <Calendar name="calendar-today" size={22} color="#037754" style={{ marginRight: 20 }} />
           <HeadingText
             textString={'Planned'}
             fontSize={16}

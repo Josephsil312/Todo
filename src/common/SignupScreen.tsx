@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, Alert, ActivityIndicator, Button, Image, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, Alert, ActivityIndicator, Button, Image, ScrollView, TouchableOpacity, BackHandler } from 'react-native';
 import auth, { firebase } from '@react-native-firebase/auth';
 import { getAuth, signInWithPopup, GoogleAuthProvider } from '@react-native-firebase/auth'
-import { NavigationProp, ParamListBase } from '@react-navigation/native';
+import { NavigationProp, ParamListBase, useIsFocused } from '@react-navigation/native';
 import { useTasks } from './TasksContextProvider';
 // import GoogleAuthProvider from '@react-native-firebase/auth';
 import { GoogleSignin, GoogleSigninButton, statusCodes } from '@react-native-google-signin/google-signin';
@@ -16,6 +16,7 @@ const SignUpScreen = ({ navigation }: Props) => {
   const { password, setPassword, email, setEmail } = useTasks()
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const isFocused = useIsFocused();
   const PasswordSchema = Yup.object().shape({
     password: Yup.string().min(6, 'Password length should be minimum of 6 characters').required('Password is required'),
     confirmPassword: Yup.string().oneOf([Yup.ref('password'), null], 'Passwords must match').required('Confirm Password is required'),
@@ -65,17 +66,8 @@ const SignUpScreen = ({ navigation }: Props) => {
       
       
       console.log('User registered and document created.');
-     
-      firebase.auth().onAuthStateChanged(user => {
-        if (user) {
-          if (user.emailVerified) {
-            Alert.alert('Welcome! Your email has been verified.');
-            navigation.navigate('LoginScreen');
-          } else {
-            Alert.alert('Please verify your email address.');
-          }
-        }
-      });
+      Alert.alert(`A verification has been set to your registered email address.`);
+      navigation.navigate('LoginScreen');
       
     } catch (error) {
       console.error(error);
@@ -85,7 +77,22 @@ const SignUpScreen = ({ navigation }: Props) => {
       setLoading(false);
     }
   };
-
+  useEffect(() => {
+    if (isFocused) {
+      const backAction = () => {
+        BackHandler.exitApp();
+        return true;
+      };
+  
+      const backHandler = BackHandler.addEventListener(
+        'hardwareBackPress',
+        backAction,
+      );
+  
+      return () => backHandler.remove();
+    }
+  }, [isFocused]);
+  
 
   return (
 
@@ -99,9 +106,6 @@ const SignUpScreen = ({ navigation }: Props) => {
         <ScrollView
           style={{ flex: 1, width: '100%' }}
           keyboardShouldPersistTaps="always">
-
-
-
           <Formik
             initialValues={{ email: '', password: '', fullName: '', confirmPassword: '' }}
             validationSchema={PasswordSchema}
@@ -170,8 +174,7 @@ const SignUpScreen = ({ navigation }: Props) => {
           </Formik>
           <View style={styles.footerView}>
             <Text style={styles.footerText}>Already have an account? <Text style={styles.footerLink} onPress={onFooterLinkPress}>Log in</Text></Text>
-          </View>
-          
+          </View>   
         </ScrollView>
       )}
     </View>

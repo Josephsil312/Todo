@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TextInput, Pressable, Alert, Text, Modal } from 'react-native';
 import { HeadingText } from '../../common/Texts';
@@ -7,82 +6,153 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import Iconfont from 'react-native-vector-icons/Fontisto';
 import DateIcon from 'react-native-vector-icons/Fontisto';
 import { useTasks } from '../TasksContextProvider';
-import Iconfromentypo from 'react-native-vector-icons/Entypo';
 import Remind from 'react-native-vector-icons/AntDesign';
 import { parse, format, startOfToday, isBefore, isYesterday, isSameDay, isTomorrow } from 'date-fns';
 import Cross from 'react-native-vector-icons/Entypo';
-import Iconn from 'react-native-vector-icons/EvilIcons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeApp, getFirestore, doc, updateDoc } from '@react-native-firebase/firestore';
 import CustomModal from '../components/screens/CustomModal';
 import firestore, { firebase } from '@react-native-firebase/firestore';
-import Close from 'react-native-vector-icons/EvilIcons';
+import Snackbar from 'react-native-snackbar';
 import CustomReminderModal from './screens/CustomReminderModal';
-import LeftChevron from 'react-native-vector-icons/AntDesign';
 import { useNavigation } from '@react-navigation/native';
-import Animated, { Easing, FadeInUp, FadeInDown } from 'react-native-reanimated'
+import Animated, { Easing, FadeInUp, FadeInDown, FadeOut, FadeIn, SlideInUp, SlideInDown, SlideOutUp } from 'react-native-reanimated'
+import notifee, { EventType, TimestampTrigger, TriggerType } from '@notifee/react-native';
+import auth, { FirebaseAuthError } from '@react-native-firebase/auth';
 const Editable = (props: any) => {
 
     const [editedText, setEditedText] = useState(props.selectedItem);
-    const { allTasks, taskCompleted, setDueDateTimeReminderText, captureDateTimeReminderTime, noteContent, setNoteContent, dueDateAdded, setAllTasks, setMyDayState, docId, captureDateTimeReminderDate, myDayState, myDay, setMyDay, dueDateTimeReminderDate, selectedDueDate, dueDateTimeReminderTime, setSelectedDueDate, setDueDate, dueDateTimeReminderText } = useTasks()
+    const { allTasks, taskCompleted, setDueDateTimeReminderText, captureDateTimeReminderTime, 
+        noteContent, setNoteContent, dueDateAdded, setAllTasks, setMyDayState, docId, captureDateTimeReminderDate, 
+        myDayState, myDay, setMyDay, dueDateTimeReminderDate, selectedDueDate, dueDateTimeReminderTime, 
+        setSelectedDueDate, setDueDate, dueDateTimeReminderText,notesScreen } = useTasks()
     const [modalVisible, setModalVisible] = useState(false);
     const [dateTimeModalVisible, setDateTimeModalVisible] = useState(false)
-    const userCollection = firestore().collection('users');
+    const userId = auth().currentUser.uid;
+    const userCollection = firestore().collection('users').doc(userId).collection('tasks');
     const [editableDueDate, setEditableDueDate] = useState(dueDateAdded)
     const [editableDueDateText, setEditableDueDateText] = useState('')
     const [editableDateTimeDateReminder, setEditableDateTimeDateReminder] = useState(captureDateTimeReminderDate)
     const [editableDateTimeTimeReminder, setEditableDateTimeTimeReminder] = useState(captureDateTimeReminderTime)
     const navigation = useNavigation();
-    const handleSave = async (docId) => {
-        await saveNoteToFirestore();
-        if (editableDueDate === '') {
-            // Clear the dateSet in Firestore
-            try {
-                const taskRef = userCollection.doc(docId);
-                await taskRef.update({ dateSet: '', name: editedText, myDay: myDayState, timeReminder: editableDateTimeTimeReminder, dateReminder: editableDateTimeDateReminder });
-                console.log('Due date removed successfully from Firestore.');
-                // Update local state if using Context API
-                setAllTasks((prevTasks) =>
-                    prevTasks.map((task) =>
-                        task.firestoreDocId === docId ? { ...task, dateSet: '' } : task
-                    )
-                );
-            } catch (error) {
-                console.error('Error removing due date from Firestore:', error);
-                // Handle errors gracefully
-            }
-        } else {
-            // Proceed with saving the changes
-            const parsedDate = parse(editableDueDate, 'dd/MM/yyyy', new Date());
-            let formattedDate = '';
-            if (parsedDate) {
-                formattedDate = format(parsedDate, 'dd/MM/yyyy');
-            } else {
-                // Handle parsing error, e.g., show an alert
-                console.error('Invalid due date format:', editableDueDate);
-            }
+    const [editableNote, setEditableNote] = useState(noteContent)
+    async function onBackgroundEvent(event) {
+        if (event.type === EventType.DISMISSED) {
+            console.log('User dismissed notification', event.notification);
+        } else if (event.type === EventType.PRESS) {
+            console.log('User pressed notification', event.notification);
+        }
+    }
+    notifee.onBackgroundEvent(onBackgroundEvent);
 
-            try {
-                const taskRef = userCollection.doc(docId);
-                await taskRef.set(
-                    { name: editedText, myDay: myDayState, dateSet: formattedDate, timeReminder: editableDateTimeTimeReminder, dateReminder: editableDateTimeDateReminder },
-                    { merge: true }
-                );
-                console.log('Task updated successfully.');
-                // Update local state if using Context API
-                setAllTasks((prevTasks) =>
-                    prevTasks.map((task) =>
-                        task.firestoreDocId === docId
-                            ? { ...task, name: editedText, myDay: myDayState, dateSet: formattedDate, timeReminder: editableDateTimeTimeReminder, dateReminder: editableDateTimeDateReminder }
-                            : task
-                    )
-                );
-            } catch (error) {
-                console.error('Error updating task:', error);
-                // Handle errors gracefully
-            }
+   
+    const handleSave = async (docId) => {
+        // Handle notification if reminder fields are filled
+
+        onDisplayNotification(editableDateTimeDateReminder, editableDateTimeTimeReminder, editedText);
+
+
+        const updatedData = {
+            name: editedText || '', // Set empty string for empty name
+            myDay: myDayState,
+            dateSet: editableDueDate ? format(parse(editableDueDate, 'dd/MM/yyyy', new Date()), 'dd/MM/yyyy') : '', // Handle empty or invalid due date
+            timeReminder: editableDateTimeTimeReminder || '', // Set empty string for empty time reminder
+            dateReminder: editableDateTimeDateReminder || '', // Set empty string for empty date reminder
+            Note: editableNote || '', // Set empty string for empty note
+        };
+
+        try {
+            const taskRef = userCollection.doc(docId);
+            await taskRef.set(updatedData, { merge: true });
+            Snackbar.show({
+                text: 'Task updated successfully!',
+            });
+            console.log('Task updated successfully.');
+
+            // Update local state if using Context API (assuming setAllTasks exists)
+            setAllTasks((prevTasks) =>
+                prevTasks.map((task) =>
+                    task.firestoreDocId === docId ? { ...task, ...updatedData } : task
+                )
+            );
+        } catch (error) {
+            console.error('Error updating task:', error);
+            // You can optionally show a user-friendly error message here
         }
     };
+    async function onDisplayNotification(dueDateTimeReminderDatee, dueDateTimeReminderTimee, taskName) {
+        // Request permissions (required for iOS)
+        console.log('dueDateTimeReminderDatee & dueDateTimeReminderTimee', dueDateTimeReminderDatee, dueDateTimeReminderTimee)
+        console.log('dueDateTimeReminderDatee', dueDateTimeReminderDatee)
+        try {
+            await notifee.requestPermission()
+
+            if (!dueDateTimeReminderDatee || !dueDateTimeReminderTimee) {
+                console.error('Reminder date or time is not provided');
+                return;
+            }
+            const dateParts = dueDateTimeReminderDatee.split('/');
+            const timeParts = dueDateTimeReminderTimee.split(':');
+
+            if (dateParts.length !== 3 || timeParts.length !== 2) {
+                console.error('Invalid date or time format');
+                return;
+            }
+            const year = parseInt(dateParts[2], 10);
+            const month = parseInt(dateParts[1], 10) - 1; // Adjust for 0-index
+            const day = parseInt(dateParts[0], 10);
+            const hours = parseInt(timeParts[0], 10);
+            const minutes = parseInt(timeParts[1], 10);
+
+            const notificationDateTime = new Date(year, month, day, hours, minutes);
+
+            if (isNaN(notificationDateTime.getTime())) {
+                console.error('Invalid reminder date or time');
+                return;
+            }
+
+            const trigger: TimestampTrigger = {
+                type: TriggerType.TIMESTAMP,
+                timestamp: notificationDateTime.getTime(), // Scheduled time
+            };
+
+            const channelId = await notifee.createChannel({
+                id: 'default',
+                name: 'Default Channel',
+            });
+
+            // Display a notification
+
+            await notifee.createTriggerNotification(
+                {
+                    title: 'Reminder',
+                    body: `${taskName}\nscheduled at ${dueDateTimeReminderTimee}`,
+                    android: {
+                        channelId,
+                    },
+                    id: channelId
+
+                },
+                trigger,
+            );
+
+        } catch (error) {
+            console.log('error in notification', error)
+        }
+
+    }
+    useEffect(() => {
+        const unsubscribe = userCollection.onSnapshot(snapshot => {
+            const tasks = snapshot.docs.map(doc => ({
+                firestoreDocId: doc.id,
+
+                ...doc.data(),
+            }));
+            setAllTasks(tasks);
+            console.log('alltasks friom editable', allTasks)
+        });
+
+        return () => unsubscribe();
+    }, []);
 
     const openModal = () => {
         setModalVisible(true);
@@ -98,8 +168,12 @@ const Editable = (props: any) => {
         setDueDateTimeReminderText(dueDateTimeText)
         setEditableDateTimeTimeReminder(dueDateTimeHour)
         setEditableDateTimeDateReminder(dueDateTimeformatted)
+
         setDateTimeModalVisible(false)
     }
+
+    const taskRef = userCollection.doc(docId);
+
     const renderDateConditional = () => {
         if (!editableDueDate) {
             return <HeadingText
@@ -130,7 +204,12 @@ const Editable = (props: any) => {
                                 )}
                             </Text>
                         ) : isSameDay(parse(editableDueDate, 'dd/MM/yyyy', new Date()), startOfToday()) ? (
-                            <Text style={styles.dueTodayTag}>Due Today</Text>
+                            <Text style={{
+                                color: '#001d76',
+                                fontSize: 16,
+                                fontWeight: '400',
+                                marginLeft: 25
+                            }}>Due Today</Text>
                         ) : isTomorrow(parse(editableDueDate, 'dd/MM/yyyy', new Date())) ? (
                             <Text style={styles.dueTomorrowTag}>Due Tomorrow</Text>
                         ) : (
@@ -167,7 +246,7 @@ const Editable = (props: any) => {
             return (
                 <>
                     <View style={{ flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', flex: 1 }}>
-                        <Text style={{ color: '#71A6D2', fontSize: 16, marginLeft: 25 }}>{`Remind me at ${formattedTime}`}</Text>
+                        <Text style={{ color: '#001d76', fontSize: 16, marginLeft: 25 }}>{`Remind me at ${formattedTime}`}</Text>
                         <Text style={styles.dueTomorrowTag}>{dateText}</Text>
                     </View>
                 </>
@@ -180,32 +259,20 @@ const Editable = (props: any) => {
         setEditableDueDateText('');
     };
 
-    const handleReminder = () => {
+    const handleReminder = async () => {
         setEditableDateTimeDateReminder('')
         setEditableDateTimeTimeReminder('')
     }
-    const saveNoteToFirestore = async () => {
-        if (docId && noteContent.trim() !== '') {
-            try {
-                const taskRef = userCollection.doc(docId);
-                await taskRef.update({ note: noteContent });
-                console.log('Note updated successfully.');
-            } catch (error) {
-                console.error('Error updating note:', error);
-            }
-        }
-    };
+
+
+    console.log('allTasks from editable', allTasks)
     return (
         <>
-            {/* <Animated.View entering={FadeInUp.duration(500).easing(Easing.ease)} exiting={FadeInDown}>
-        <Modal visible={props.editableModal}> */}
-            <View style={styles.container}>
+
+            <Animated.View style={styles.container} entering={SlideInDown.duration(200).easing(Easing.ease)} exiting={SlideInUp.duration(200).easing(Easing.ease)}>
                 <View style={styles.taskContainer}>
                     <View style={styles.editablecontainer}>
-                        {/* <Pressable onPress={() => navigation.goBack()}>
-                        <LeftChevron name="left" size={22} color="grey" style={{ color: 'black' }}/>
-                        </Pressable>
-                    */}
+
                         <Icon name="circle-thin" size={27} color="grey" />
                         <TextInputSingleLine
                             onChangeText={(text) => setEditedText(text)}
@@ -218,7 +285,7 @@ const Editable = (props: any) => {
                             textDecorationLine={taskCompleted ? "line-through" : ''}
                         />
                     </View>
-                    <Pressable style={{ backgroundColor: props.color, paddingHorizontal: 7, paddingVertical: 5, borderRadius: 5 }} onPress={() => { handleSave(docId); }}>
+                    <Pressable style={{ backgroundColor: '#001d76', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 5 }} onPress={() => { handleSave(docId); }}>
                         <HeadingText
                             textString={'save'}
                             fontSize={12}
@@ -231,12 +298,12 @@ const Editable = (props: any) => {
                 <View style={styles.secondContainer}>
                     <View style={styles.addtomyday}>
                         <Pressable style={{ flexDirection: 'row', justifyContent: 'flex-start', width: 120, flex: 1 }} onPress={() => setMyDayState((prev) => !prev)}>
-                            <Iconfont name="day-sunny" size={20} color={'grey' } />
+                            <Iconfont name="day-sunny" size={20} color={'grey'} />
                             <HeadingText
                                 textString={myDayState ? 'Added to My Day' : 'Add to My Day'}
                                 fontSize={16}
                                 textDecorationLine="none"
-                                color={myDayState ? '#71A6D2' : 'grey'}
+                                color={myDayState ? '#001d76' : 'grey'}
                                 marginLeft={25}
                             />
                         </Pressable >
@@ -259,19 +326,26 @@ const Editable = (props: any) => {
                         </Pressable>
                     </View>
                 </View>
+              
                 <View style={styles.addNote}>
-                    <TextInputSingleLine
-                        onChangeText={setNoteContent}
-                        value={noteContent}
+                    <TextInput
+                        onChangeText={(text) => setEditableNote(text)}
+                        value={editableNote}
                         placeholder={'Add Note'}
-                        color={'grey'}
+                        returnKeyType="done"
+                        blurOnSubmit={false}
+                        multiline
+                        style = {{fontSize:15}}
+                        textAlignVertical="top"
+                        
                     />
                 </View>
-            </View>
+               
+            </Animated.View>
             <View>
-            
 
-                <CustomModal  allTasks={allTasks} selectedDueDate={selectedDueDate} onDueDateSelected={handleDueDateSelected} modalVisible={modalVisible} setModalVisible={setModalVisible} />
+
+                <CustomModal allTasks={allTasks} selectedDueDate={selectedDueDate} onDueDateSelected={handleDueDateSelected} modalVisible={modalVisible} setModalVisible={setModalVisible} />
                 <CustomReminderModal
                     dateTimeModalVisible={dateTimeModalVisible}
                     setDateTimeModalVisible={setDateTimeModalVisible}
@@ -289,13 +363,7 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
     },
-    dueTodayTag: {
-        // Adjust appearance as desired, e.g.,
-        color: '#71A6D2',
-        fontSize: 16,
-        fontWeight: '400',
-        marginLeft: 25
-    },
+
     editablecontainer: {
         flexDirection: 'row',
         justifyContent: 'flex-start',
@@ -327,7 +395,7 @@ const styles = StyleSheet.create({
     },
     dueTomorrowTag: {
         color: 'grey',
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: '400',
         marginLeft: 25
     },
@@ -376,7 +444,12 @@ const styles = StyleSheet.create({
         borderBottomWidth: 0.2,
         borderBottomColor: 'grey',
         borderRadius: 2,
-        flex: 1
+        flex: 1,
+        paddingLeft: 10,
+        paddingRight: 10,
+       
+
     }
 })
 export default Editable;
+

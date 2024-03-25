@@ -42,41 +42,45 @@ const LoginScreen = ({ navigation }: Props) => {
       // Attempt to get the user document from Firestore
       const firestoreDocument = await usersRef.doc(uid).get();
 
-     
+
       if (!firestoreDocument.exists) {
-        console.log('User document does not exist.');
+       Alert.alert(`User doesn't exist`)
       } else {
         // If the document exists, proceed with your logic
         const user = firestoreDocument.data();
         console.log('User data:', { user });
-
+        if (res.user.emailVerified) {
+        
+          navigation.navigate('Home');
+        } else {
+          Alert.alert('Please verify your registered email:)');
+          await auth().currentUser?.sendEmailVerification();
+          await auth().signOut()
+        }
         // Store the login status in AsyncStorage
         await AsyncStorage.setItem('isLoggedIn', "true");
         console.log('setItem login screen', await AsyncStorage.getItem('isLoggedIn'));
-
-        // Navigate to the Home screen
-        navigation.navigate('Home');
       }
 
     } catch (error) {
       // Handle errors here
       console.error(error);
-      
-      Alert.alert('Error:',error.message)
+
+      Alert.alert('Error:', error.message)
       if (error.code === 'auth/email-already-in-use') {
         console.log('That email address is already in use!');
-        
+
       } else if (error.code === 'auth/invalid-email') {
         console.log('That email address is invalid!');
-       
+
       } else if (error.code === 'auth/user-not-found') {
         console.log('No user found with this email.');
-        
+
       } else if (error.code === 'auth/wrong-password') {
-        
-       
+
+
       }
-      
+
     } finally {
       setIsLoading(false);
     }
@@ -92,63 +96,63 @@ const LoginScreen = ({ navigation }: Props) => {
 
   return (
     <View style={styles.container}>
- <Image source={require('../../assets/images/login.png')} style = {{width:200,height:200}}/>
+      <Image source={require('../../assets/images/login.png')} style={{ width: 200, height: 200 }} />
       {isLoading ? ( // Conditional rendering based on loading state
         <ActivityIndicator size="large" color="#788eec" />
       ) : (
-        
-      <Formik
-        initialValues={{ email: '', password: '' }}
-        validationSchema={LoginSchema}
-        onSubmit={(values) => handleLogin(values)}
-      >
-        {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
-          <ScrollView
-            style={{ flex: 1, width: '100%' }}
-            keyboardShouldPersistTaps="always">
-            <TextInput
-              style={[styles.input, errors.email && touched.email ? styles.inputError : null]}
-              placeholder='E-mail'
-              placeholderTextColor="#aaaaaa"
-              onChangeText={handleChange('email')}
-              onBlur={handleBlur('email')}
-              value={values.email}
-              underlineColorAndroid="transparent"
-              autoCapitalize="none"
-            />
-            {errors.email && touched.email && <Text style={{ color: 'red', marginLeft: 30 }}>{errors.email || emailError}</Text>}
-            
-            <TextInput
-              style={[styles.input, errors.password && touched.password ? styles.inputError : null]}
-              placeholderTextColor="#aaaaaa"
-              secureTextEntry
-              placeholder='Password'
-              onChangeText={handleChange('password')}
-              onBlur={handleBlur('password')}
-              value={values.password}
-              underlineColorAndroid="transparent"
-              autoCapitalize="none"
-            />
-            {errors.password && touched.password && <Text style={{ color: 'red', marginLeft: 30 }}>{errors.password || passwordError}</Text>}
-           
-            <TouchableOpacity
-              style={styles.button}
-              onPress={handleSubmit}
-              disabled={isLoading}>
-              <Text style={styles.buttonTitle}>Log in</Text>
-            </TouchableOpacity>
 
-            <View style={styles.footerView}>
-              <Text style={styles.footerText}>Don't have an account? <Text onPress={() => navigation.goBack()} style={styles.footerLink}>Sign up</Text></Text>
-            </View>
+        <Formik
+          initialValues={{ email: '', password: '' }}
+          validationSchema={LoginSchema}
+          onSubmit={(values) => handleLogin(values)}
+        >
+          {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
+            <ScrollView
+              style={{ flex: 1, width: '100%' }}
+              keyboardShouldPersistTaps="always">
+              <TextInput
+                style={[styles.input, errors.email && touched.email ? styles.inputError : null]}
+                placeholder='E-mail'
+                placeholderTextColor="#aaaaaa"
+                onChangeText={handleChange('email')}
+                onBlur={handleBlur('email')}
+                value={values.email}
+                underlineColorAndroid="transparent"
+                autoCapitalize="none"
+              />
+              {errors.email && touched.email && <Text style={{ color: 'red', marginLeft: 30 }}>{errors.email || emailError}</Text>}
 
-            <TouchableOpacity onPress={resetPasswordHandle}>
-              <Text style={{ alignSelf: 'center', marginTop: 10, color: '#788eec' }}>Forgot password?</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        )}
-      </Formik>
-           )}
+              <TextInput
+                style={[styles.input, errors.password && touched.password ? styles.inputError : null]}
+                placeholderTextColor="#aaaaaa"
+                secureTextEntry
+                placeholder='Password'
+                onChangeText={handleChange('password')}
+                onBlur={handleBlur('password')}
+                value={values.password}
+                underlineColorAndroid="transparent"
+                autoCapitalize="none"
+              />
+              {errors.password && touched.password && <Text style={{ color: 'red', marginLeft: 30 }}>{errors.password || passwordError}</Text>}
+
+              <TouchableOpacity
+                style={styles.button}
+                onPress={handleSubmit}
+                disabled={isLoading}>
+                <Text style={styles.buttonTitle}>Log in</Text>
+              </TouchableOpacity>
+
+              <View style={styles.footerView}>
+                <Text style={styles.footerText}>Don't have an account? <Text onPress={() => navigation.goBack()} style={styles.footerLink}>Sign up</Text></Text>
+              </View>
+
+              <TouchableOpacity onPress={resetPasswordHandle}>
+                <Text style={{ alignSelf: 'center', marginTop: 10, color: '#788eec' }}>Forgot password?</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          )}
+        </Formik>
+      )}
     </View>
   );
 };
@@ -157,12 +161,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    justifyContent:'center'
+    justifyContent: 'center'
   },
   inputError: {
     borderColor: 'red',
   },
-  
+
   input: {
     height: 48,
     borderRadius: 5,

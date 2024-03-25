@@ -74,31 +74,51 @@ const MyDay = ({ navigation }: Props) => {
         console.log('error loading items ot firebase', e)
       }
     }
-    if (dueDateTimeReminderDate.trim() !== '' && dueDateTimeReminderTime.trim() !== '') {
-      onDisplayNotification(dueDateTimeReminderDate, dueDateTimeReminderTime, task);
-    }
+    
+    await onDisplayNotification(dueDateTimeReminderDate, dueDateTimeReminderTime, task);
+   
   }
   async function onDisplayNotification(dueDateTimeReminderDatee, dueDateTimeReminderTimee, taskName) {
     // Request permissions (required for iOS)
     try {
       await notifee.requestPermission()
+
+      if (!dueDateTimeReminderDatee || !dueDateTimeReminderTimee) {
+        console.error('Reminder date or time is not provided');
+        return;
+      }
       const dateParts = dueDateTimeReminderDatee.split('/');
       const timeParts = dueDateTimeReminderTimee.split(':');
+
+      if (dateParts.length !== 3 || timeParts.length !== 2) {
+        console.error('Invalid date or time format');
+        return;
+      }
       const year = parseInt(dateParts[2], 10);
       const month = parseInt(dateParts[1], 10) - 1; // Adjust for 0-index
       const day = parseInt(dateParts[0], 10);
       const hours = parseInt(timeParts[0], 10);
       const minutes = parseInt(timeParts[1], 10);
+
       const notificationDateTime = new Date(year, month, day, hours, minutes);
+
+      if (isNaN(notificationDateTime.getTime())) {
+        console.error('Invalid reminder date or time');
+        return;
+      }
+
       const trigger: TimestampTrigger = {
         type: TriggerType.TIMESTAMP,
         timestamp: notificationDateTime.getTime(), // Scheduled time
+        alarmManager:true,
       };
 
       const channelId = await notifee.createChannel({
         id: 'default',
         name: 'Default Channel',
       });
+
+      // Display a notification
 
       await notifee.createTriggerNotification(
         {
@@ -107,14 +127,13 @@ const MyDay = ({ navigation }: Props) => {
           android: {
             channelId,
           },
-
+          id: channelId
         },
         trigger,
       );
     } catch (error) {
       console.log('error in notification', error)
     }
-
   }
   async function onBackgroundEvent(event) {
     if (event.type === EventType.DISMISSED) {

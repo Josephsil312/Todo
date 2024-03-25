@@ -16,6 +16,8 @@ import Planned from './src/common/components/screens/Planned';
 import Tasks from './src/common/components/screens/Tasks';
 import HomeScreen from './src/HomeScreen';
 import Splash from './src/common/components/screens/Splash';
+// import Notes from './src/common/components/screens/Notes';
+
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
@@ -37,11 +39,12 @@ const App = () => {
  useEffect(() => {
     SplashScreen.hide();
  }, []);
+ 
   return (<>
     <TasksContextProvider>
       <NavigationContainer>
         <View style={{ flex: 1 }}>
-        {console.log('isLoggedIn stack',isLoggedIn, typeof(isLoggedIn))}
+        
             <View style={{ flex: 1 }}>
               
               <Stack.Navigator initialRouteName={"Splash"}>
@@ -164,6 +167,7 @@ const App = () => {
                   component={LoginScreen}
                   options={{ title: 'Home', headerShown: false }}
                 />
+                
               </Stack.Navigator>
             </View>
          
